@@ -10,7 +10,7 @@ original: clean d64_orig run_orig
 
 psyII.prg: src/psyII.asm
 	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/psyII.prg -L bin/list-co1.txt -l bin/labels.txt src/psyII.asm
-	echo "65d265c4a55235508353668b5c61b1dd  bin/psyII.prg" | md5sum -c
+#	echo "65d265c4a55235508353668b5c61b1dd  bin/psyII.prg" | md5sum -c
 
 run: psyII.prg
 	$(X64) -verbose $(D64_IMAGE)

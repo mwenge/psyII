@@ -46,8 +46,8 @@ LaunchPsychedelia
         JSR InitializePsychedelia
         JSR SetUpBackgroundPainting
         JSR InitializeColorIndexArray
-        JSR InitializeStatusDisplayText
-        JSR UpdateCurrentSettingsDisplay
+        ;JSR InitializeStatusDisplayText
+        ;JSR UpdateCurrentSettingsDisplay
         CLI 
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
@@ -321,8 +321,17 @@ _Loop   LDA #$42
         LDA currentColorValue
         STA COLOR_RAM + (NUM_COLS * 8),X
         INX 
-        CPX #(2 * NUM_COLS)
+        CPX #(6 * NUM_COLS)
         BNE _Loop
+
+        LDX #$00
+_Loop2  LDA #$42
+        STA SCREEN_RAM + (NUM_COLS * 14),X
+        LDA currentColorValue
+        STA COLOR_RAM + (NUM_COLS * 14),X
+        INX 
+        CPX #(3 * NUM_COLS)
+        BNE _Loop2
         RTS 
 
 ;--------------------------------------------------------
@@ -874,7 +883,7 @@ MaybeSKeyPressed
         STA currentSymmetrySetting
 
 UpdateStatusLineAndReturn   
-        JSR UpdateCurrentSettingsDisplay
+        ;JSR UpdateCurrentSettingsDisplay
         RTS 
 
 MaybeCKeyPressed   
@@ -933,12 +942,18 @@ ChangeBorderColor
 _Loop   LDA COLOR_RAM + $0000,X
         JSR CheckCurrentBorderColor
         STA COLOR_RAM + $0000,X
+
         LDA COLOR_RAM + $0100,X
         JSR CheckCurrentBorderColor
         STA COLOR_RAM + $0100,X
-        LDA COLOR_RAM + $01D0,X
+
+        LDA COLOR_RAM + $0200,X
         JSR CheckCurrentBorderColor
-        STA COLOR_RAM + $01D0,X
+        STA COLOR_RAM + $0200,X
+
+        LDA COLOR_RAM + $0300,X
+        JSR CheckCurrentBorderColor
+        STA COLOR_RAM + $0300,X
         DEX 
         BNE _Loop
 

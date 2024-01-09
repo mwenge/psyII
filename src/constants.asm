@@ -1,7 +1,7 @@
 NUM_ROWS                         = $18
 NUM_COLS                         = $28
 
-TOP_Y_POSITION                   = $11
+TOP_Y_POSITION                   = NUM_ROWS
 
 BLACK                            = $00
 WHITE                            = $01
