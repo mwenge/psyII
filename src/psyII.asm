@@ -1,19 +1,47 @@
+RAM_ACCESS_MODE = $01
+defaultColorValue = $06
+currentChar = $07
+a08 = $08
+a09 = $09
+screenLinesLoPtr = $02
+screenLinesHiPtr = $03
+currentCharXPos = $04
+currentCharYPos = $05
 shiftKey                         = $028D
-;---------------------------------------------------------------------------------
-; Game 6: Psychedelia 
-; 
-; Well I was going to put a PAUSE mode in, but this is much better. When you need
-; to, drop into SUB6 and relax. The timer stops and you can stay in the subgame
-; until you've got your head together enough to play on. The controls are a
-; subset of real PSYCHEDELIA, allowing S=symmetry change and C=cursor speed. You
-; can also use F1 and SHIFT-F1 to change fore- and background colours. 
-; 
-; Design Notes: Well it's more interesting than freezing the screen. 
-;---------------------------------------------------------------------------------
+screenLinesLoPtrArray = $0340
+screenLinesHiPtrArray = $0360
+currentRasterArrayIndex = $0A
+currentPressedKey = $C5
+indexIntoDataChars = $D0
+indexToBackgroundControlArray = $D1
+
+.include "constants.asm"
+
+* = $0801
+;-----------------------------------------------------------------------------------
+; Start program at InitializeProgram (SYS 2064)
+; SYS 2064 ($0810)
+;
+; This is where execution starts.
+; It is a short BASIC program that executes whatever is at address
+; $0810 (2064 in decimal). In this case, that's InitializeProgram.
+;-----------------------------------------------------------------------------------
+        .BYTE $0B,$08          ; Points to EndOfProgram address below
+        .BYTE $C1,$07          ; Arbitrary Line Number, in this case: 1985
+        .BYTE $9E              ; SYS
+        .BYTE $32,$30,$36,$34  ; 2064 ($810), which is InitializeProgram below.
+        .BYTE $00              ; Null byte to terminate the line above.
+        .BYTE $00,$00          ; EndOfProgram  (all zeroes)
+        .BYTE $F9,$02,$F9      ; Filler bytes so that InitializeProgram is
+                               ; located at $0810
+
 ;--------------------------------------------------------
 ; LaunchPsychedelia
 ;--------------------------------------------------------
 LaunchPsychedelia
+        JSR InitializeScreenLinePtrArray
+        JSR ClearScreen
+        JSR SetUpInterrupts
         SEI 
         JSR InitializePsychedelia
         JSR SetUpBackgroundPainting
@@ -26,13 +54,175 @@ PsychedeliaLoop
         JSR CheckKeyboardInput
         JMP PsychedeliaLoop
 
+a40D7   .BYTE $03
+a4142   .BYTE $01
+;---------------------------------------------------------------------------------
+; SetUpInterrupts
+;---------------------------------------------------------------------------------
+SetUpInterrupts   
+        SEI 
+        LDA #$7F
+        STA $DC0D    ;CIA1: CIA Interrupt Control Register
+        LDA #<TitleScreenInterruptHandler
+        STA $0314    ;IRQ
+        LDA #>TitleScreenInterruptHandler
+        STA $0315    ;IRQ
+        LDA #$00
+        STA currentRasterArrayIndex
+        JSR UpdateRasterPosition
+        JSR InitializeRasterJumpTablePtrArray
+
+        LDA #$01
+        STA $D01A    ;VIC Interrupt Mask Register (IMR)
+        RTS 
+
+;---------------------------------------------------------------------------------
+; UpdateRasterPosition
+;---------------------------------------------------------------------------------
+UpdateRasterPosition   
+        LDA $D011    ;VIC Control Register 1
+        AND #$7F
+        STA $D011    ;VIC Control Register 1
+        LDX currentRasterArrayIndex
+        LDA rasterPositionArray,X
+        CMP #$FF
+        BNE b4224
+
+        LDA #$00
+        STA currentRasterArrayIndex
+        LDA rasterPositionArray
+b4224   STA $D012    ;Raster Position
+        LDA #$01
+        STA $D019    ;VIC Interrupt Request Register (IRR)
+        RTS 
+
+rasterJumpTableLoPtr2=*+$01
+rasterJumpTableLoPtr3=*+$02
+rasterJumpTableLoPtrArray .BYTE $55,$55
+                          .BYTE $22,$22,$22,$22,$46,$46,$46,$46
+                          .BYTE $46,$46
+rasterJumpTableHiPtr2=*+$01
+rasterJumpTableHiPtr3=*+$02
+rasterJumpTableHiPtrArray .BYTE $C0,$C0
+                          .BYTE $C3,$C3,$C3,$C3,$42,$42,$42,$42
+                          .BYTE $42,$42
+rasterPositionArray       .BYTE $E0,$FF,$C0,$FF,$A0,$C0,$FF
+;---------------------------------------------------------------------------------
+; InitializeRasterJumpTablePtrArray
+;---------------------------------------------------------------------------------
+InitializeRasterJumpTablePtrArray   
+        LDX #$00
+b4574   LDA #$46
+        STA rasterJumpTableLoPtrArray,X
+        LDA #$42
+        STA rasterJumpTableHiPtrArray,X
+        INX 
+        CPX #$0C
+        BNE b4574
+        RTS 
+
+;---------------------------------------------------------------------------------
+; TitleScreenInterruptHandler
+;---------------------------------------------------------------------------------
+TitleScreenInterruptHandler
+        LDA $D019    ;VIC Interrupt Request Register (IRR)
+        AND #$01
+        BNE b4237
+        JMP $EA31
+        ; Returns
+
+        ; After a delay calculated from the IRQ switch to the Zarjas poster
+        ; and back again.
+b4237   LDX currentRasterArrayIndex
+        LDA rasterJumpTableLoPtrArray,X
+        STA a08
+        LDA rasterJumpTableHiPtrArray,X
+        STA a09
+        JMP ($0008)
+        ;Returns
+
+;---------------------------------------------------------------------------------
+; ClearScreen
+;---------------------------------------------------------------------------------
+ClearScreen   
+        LDX #$00
+_Loop   LDA #SPACE
+        STA SCREEN_RAM,X
+        STA SCREEN_RAM + $0100,X
+        STA SCREEN_RAM + $0200,X
+        STA SCREEN_RAM + $0300,X
+        LDA #WHITE
+        STA COLOR_RAM + $02F0,X
+        DEX 
+        BNE _Loop
+        RTS 
+
+;---------------------------------------------------------------------------------
+; InitializeScreenLinePtrArray
+;---------------------------------------------------------------------------------
+InitializeScreenLinePtrArray   
+        LDA #>SCREEN_RAM
+        STA screenLinesHiPtr
+        LDA #<SCREEN_RAM
+        STA screenLinesLoPtr
+
+        LDX #$00
+b414D   LDA screenLinesLoPtr
+        STA screenLinesLoPtrArray,X
+        LDA screenLinesHiPtr
+        STA screenLinesHiPtrArray,X
+        LDA screenLinesLoPtr
+        CLC 
+        ADC #NUM_COLS
+        STA screenLinesLoPtr
+        LDA screenLinesHiPtr
+        ADC #$00
+        STA screenLinesHiPtr
+        INX 
+        CPX #NUM_ROWS + 2
+        BNE b414D
+        RTS 
+
+;---------------------------------------------------------------------------------
+; GetCurrentCharAddress
+;---------------------------------------------------------------------------------
+GetCurrentCharAddress   
+        LDX currentCharYPos
+        LDY currentCharXPos
+        LDA screenLinesLoPtrArray,X
+        STA screenLinesLoPtr
+        LDA screenLinesHiPtrArray,X
+        STA screenLinesHiPtr
+        RTS 
+
+;---------------------------------------------------------------------------------
+; WriteCurrentCharToScreen
+;---------------------------------------------------------------------------------
+WriteCurrentCharToScreen   
+        JSR GetCurrentCharAddress
+        LDA currentChar
+        STA (screenLinesLoPtr),Y
+        LDA screenLinesHiPtr
+        PHA 
+
+        ; Update color of character
+        CLC 
+        ADC #OFFSET_TO_COLOR_RAM
+        STA screenLinesHiPtr
+        LDA defaultColorValue
+        STA (screenLinesLoPtr),Y
+
+        PLA 
+        STA screenLinesHiPtr
+        RTS 
+
 ;--------------------------------------------------------
 ; InitializePsychedelia
 ;--------------------------------------------------------
 InitializePsychedelia   
         LDX #$00
 _Loop   LDA #SPACE
-        STA SCREEN_RAM + $0000,X
+        STA SCREEN_RAM,X
         DEX 
         BNE _Loop
 
@@ -41,16 +231,33 @@ _Loop   LDA #SPACE
         ORA #$08
         STA $D016    ;VIC Control Register 2
 
-        LDA #$0A
+        ; The '1' points screen memory to its default position
+        ; in memory (i.e. SCREEN_RAM = $0400). The '8'
+        ; selects $2000 as the location of the character set to
+        ; use. $2000 = characterSetData
+        LDA #$18
+        STA $D018    ;VIC Memory Control Register
+
+        LDA #BLACK
+        STA $D020    ;Border Color
+        STA $D021    ;Background Color 0
+        STA $D400    ;Voice 1: Frequency Control - Low-Byte
+
+        LDA #$04
+        STA $D407    ;Voice 2: Frequency Control - Low-Byte
+        LDA #$08
+        STA $D40E    ;Voice 3: Frequency Control - Low-Byte
+
+        LDA #TOP_Y_POSITION - 7
         STA currentCharYPos
 
         LDA #$63
         STA currentChar
 
         LDA currentColorValue
-        STA a06
+        STA defaultColorValue
 
-OuterLoop   
+SetUpScreenLoop   
         LDA #$00
         STA currentCharXPos
 
@@ -60,7 +267,7 @@ InnerLoop
         LDA currentCharYPos
         PHA 
         SEC 
-        SBC #$0A
+        SBC #TOP_Y_POSITION - 7
         STA currentCharYPos
 
         LDA currentChar
@@ -74,19 +281,23 @@ InnerLoop
 
         PLA 
         STA currentChar
+
         PLA 
         STA currentCharYPos
+
         INC currentCharXPos
+
         LDA currentCharXPos
-        CMP #$28
+        CMP #NUM_COLS
         BNE InnerLoop
 
         INC currentChar
         INC currentCharYPos
         LDA currentCharYPos
-        CMP #$12
-        BNE OuterLoop
+        CMP #TOP_Y_POSITION + 1
+        BNE SetUpScreenLoop
 
+SetUpSpritesAndVoiceRegisters
         LDA $D011    ;VIC Control Register 1
         AND #$F8
         ORA #$03
@@ -100,15 +311,17 @@ InnerLoop
         STA $D40B    ;Voice 2: Control Register
         STA $D412    ;Voice 3: Control Register
 
-        JSR ResetSomeDataAndClearMiddleScreen
+        ;JSR ResetSomeDataAndClearMiddleScreen
 
+
+DrawTwoMiddleLines
         LDX #$00
 _Loop   LDA #$42
-        STA SCREEN_RAM + $0140,X
+        STA SCREEN_RAM + (NUM_COLS * 8),X
         LDA currentColorValue
-        STA COLOR_RAM + $0140,X
+        STA COLOR_RAM + (NUM_COLS * 8),X
         INX 
-        CPX #$50
+        CPX #(2 * NUM_COLS)
         BNE _Loop
         RTS 
 
@@ -132,6 +345,19 @@ psyRasterPositionArray       .BYTE $C0,$FF,$FF
 psyRasterJumpTableLoPtrArray .BYTE <PaintBackgroundColor,<PaintBackgroundColor,<PaintBackgroundColor
 psyRasterJumpTableHiPtrArray .BYTE >PaintBackgroundColor,>PaintBackgroundColor,>PaintBackgroundColor
 
+;---------------------------------------------------------------------------------
+; IncrementAndUpdateRaster
+;---------------------------------------------------------------------------------
+IncrementAndUpdateRaster
+        INC currentRasterArrayIndex
+        JSR UpdateRasterPosition
+        PLA 
+        TAY 
+        PLA 
+        TAX 
+        PLA 
+        RTI 
+
 ;--------------------------------------------------------
 ; PaintBackgroundColor
 ;--------------------------------------------------------
@@ -141,11 +367,11 @@ PaintBackgroundColor
         STA $D020    ;Border Color
         STA $D021    ;Background Color 0
 
-        JSR s4138
-        JSR s721F
+        JSR UpdateBackgroundData
+        JSR FetchBackgroundData
         JSR WriteLinesToScreen
         JSR $FF9F ;$FF9F - scan keyboard                    
-        JMP JumpToIncrementAndUpdateRaster
+        JMP IncrementAndUpdateRaster
 
 currentColorValue .BYTE $0B
 cursorXPosition   .BYTE $15
@@ -671,7 +897,7 @@ MaybeCKeyPressed
 MaybeF1Pressed   
         CMP #KEY_F1_F2
         BEQ CycleBackgroundColor
-        JMP JumpToCheckSubGameSelection
+        RTS
 
 cursorSpeed         .BYTE $02
 processingKeyStroke .BYTE $00
@@ -740,9 +966,9 @@ InitializeStatusDisplayText
         LDX #$00
 _Loop   LDA statusLineOne,X
         AND #$3F
-        STA SCREEN_RAM + $0320,X
+        STA SCREEN_RAM + (NUM_COLS * 20),X
         LDA #$0B
-        STA COLOR_RAM + $0320,X
+        STA COLOR_RAM + (NUM_COLS * 20),X
         INX 
         CPX #NUM_COLS
         BNE _Loop
@@ -757,17 +983,17 @@ UpdateCurrentSettingsDisplay
         LDX #$00
 _Loop   LDA statusLineTwo,X
         AND #$3F
-        STA SCREEN_RAM + $02D0,X
+        STA SCREEN_RAM + (NUM_COLS * 18),X
         LDA #$0B
-        STA COLOR_RAM + $02D0,X
+        STA COLOR_RAM + (NUM_COLS * 18),X
         INX 
-        CPX #$28
+        CPX #NUM_COLS
         BNE _Loop
 
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + $02F1
+        STA SCREEN_RAM + (NUM_COLS * 18) + 33
 
         LDA currentSymmetrySetting
         ASL 
@@ -777,7 +1003,7 @@ _Loop   LDA statusLineTwo,X
         LDX #$00
 _Loop2  LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + $02DF,X
+        STA SCREEN_RAM + (NUM_COLS * 18) + 15,X
         INY 
         INX 
         CPX #$04
@@ -788,3 +1014,126 @@ _Loop2  LDA symmetrySettingTxt,Y
 symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
 currentBackgroundColor .BYTE $00
 currentSymmetrySetting .BYTE $01,$DD
+
+LEN_INITIAL_ARRAY = $1C
+initialBackgroundUpdateControlArray   
+        .BYTE $08,$08,$08,$08,$04,$04,$04,$04
+        .BYTE $02,$02,$02,$02,$01,$01,$01,$01
+        .BYTE $01,$01,$01,$01,$01,$01,$01,$01
+        .BYTE $01,$01,$01,$01
+
+numberOfUpdatesToMakeToChars   
+        .BYTE $01,$01,$01,$01,$02,$02,$02,$02
+        .BYTE $03,$03,$03,$03,$04,$04,$04,$04
+        .BYTE $05,$05,$05,$05,$06,$06,$06,$06
+        .BYTE $07,$07,$07,$07,$08,$08,$08,$08
+
+LEN_BG_CTRL_ARRAY = $10
+indexArrayForBackgroundChars   
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+backgroundUpdateControlArray   
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+
+;---------------------------------------------------------------------------------
+; UpdateBackgroundData
+;---------------------------------------------------------------------------------
+UpdateBackgroundData
+        DEC controlByteForUpdatingBackground
+        BNE b5A10
+
+        LDA #LEN_INITIAL_ARRAY
+        STA controlByteForUpdatingBackground
+
+        LDX #$00
+_Loop   LDA backgroundUpdateControlArray,X
+        BEQ b5A06
+        INX 
+        CPX #LEN_BG_CTRL_ARRAY
+        BNE _Loop
+
+        JMP b5A10
+
+b5A06   LDA #$01
+        STA backgroundUpdateControlArray,X
+        LDA #$00
+        STA indexArrayForBackgroundChars,X
+
+b5A10   LDX #$00
+b5A12   LDA backgroundUpdateControlArray,X
+        BEQ b5A23
+        DEC backgroundUpdateControlArray,X
+        BNE b5A23
+
+        TXA 
+        PHA 
+        JSR UpdateBackgroundDataCharacters
+
+        PLA 
+        TAX 
+b5A23   INX 
+        CPX #LEN_BG_CTRL_ARRAY
+        BNE b5A12
+        RTS 
+
+NUM_HORIZON_CHARACTERS = $09
+;---------------------------------------------------------------------------------
+; UpdateBackgroundDataCharacters
+;---------------------------------------------------------------------------------
+UpdateBackgroundDataCharacters   
+        LDA indexArrayForBackgroundChars,X
+        STA indexIntoDataChars
+
+        CLC 
+        ROR 
+        STA indexToBackgroundControlArray
+
+        INC indexArrayForBackgroundChars,X
+
+        LDA #$FF
+        LDY indexIntoDataChars
+        STA rollingHorizonCharacters,Y
+
+        INY 
+        TYA 
+        STA indexIntoDataChars
+        CMP #(8 * NUM_HORIZON_CHARACTERS)
+        BNE ResetHorizonCharacter
+
+        RTS 
+
+ResetHorizonCharacter   
+        LDY indexToBackgroundControlArray
+        LDA initialBackgroundUpdateControlArray,Y
+        STA backgroundUpdateControlArray,X
+
+        LDX numberOfUpdatesToMakeToChars,Y
+        LDY indexIntoDataChars
+        LDA #$00
+_Loop   INY 
+        STA rollingHorizonCharacters,Y
+        DEX 
+        BNE _Loop
+        RTS 
+
+controlByteForUpdatingBackground   
+        .BYTE $01,$63,$64,$65,$66,$67,$68,$69
+        .BYTE $6A,$6B,$6C,$6D,$6E,$6F
+
+;---------------------------------------------------------------------------------
+; FetchBackgroundData
+;---------------------------------------------------------------------------------
+FetchBackgroundData   
+        LDX #$FF
+        LDY #$00
+b7223   LDA rollingHorizonCharacters,Y
+        STA activeBackgroundCharacters,X
+        DEX 
+        INY 
+        CPY #$40
+        BNE b7223
+        RTS 
+
+* = $2000
+.include "charset.asm"
