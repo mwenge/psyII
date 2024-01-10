@@ -48,6 +48,7 @@ LaunchPsychedelia
         JSR InitializeColorIndexArray
         ;JSR InitializeStatusDisplayText
         ;JSR UpdateCurrentSettingsDisplay
+        JSR DisplayLogo
         CLI 
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
@@ -382,10 +383,10 @@ PaintBackgroundColor
         JSR $FF9F ;$FF9F - scan keyboard                    
         JMP IncrementAndUpdateRaster
 
-currentColorValue .BYTE $0B
+currentColorValue .BYTE BLACK
 cursorXPosition   .BYTE $15
 cursorYPosition   .BYTE $0B
-colorValueToWrite .BYTE $01
+colorValueToWrite .BYTE WHITE
 
 screenRAMLoPtr = $23
 screenRAMHiPtr = $24
@@ -542,7 +543,7 @@ colorComparisonArray
         .BYTE ORANGE
 
 lastColorValue        .BYTE $07
-currentColor          .BYTE $0B
+currentColor          .BYTE BLACK
 initialPixelYPosition .BYTE $0C
 initialPixelXPosition .BYTE $0C
 
@@ -633,7 +634,7 @@ HasXAxisSymmetry
 
 currentSymmetrySettingForStep .BYTE $01
 presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
-unusedVariable                .BYTE $0B
+emptyColor                .BYTE BLACK
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
 ;--------------------------------------------------------
@@ -936,7 +937,7 @@ ChangeBorderColor
         AND #$0F
         STA currentColorValue
 
-        STA unusedVariable
+        STA emptyColor
 
         LDX #$00
 _Loop   LDA COLOR_RAM + $0000,X
@@ -973,7 +974,7 @@ CheckCurrentBorderColor
         LDA currentColorValue
         RTS 
 
-currentBorderColor   .BYTE $00
+currentBorderColor   .BYTE BLACK
 ;--------------------------------------------------------
 ; InitializeStatusDisplayText
 ;--------------------------------------------------------
@@ -982,12 +983,33 @@ InitializeStatusDisplayText
 _Loop   LDA statusLineOne,X
         AND #$3F
         STA SCREEN_RAM + (NUM_COLS * 20),X
-        LDA #$0B
+        LDA #GRAY1
         STA COLOR_RAM + (NUM_COLS * 20),X
         INX 
         CPX #NUM_COLS
         BNE _Loop
         RTS 
+
+logoLineOne .BYTE $76,$78,$7E,$80
+logoLineTwo .BYTE $77,$79,$7F,$81
+;--------------------------------------------------------
+; DisplayLogo
+;--------------------------------------------------------
+DisplayLogo   
+        LDX #$00
+_Loop   LDA logoLineOne,X
+        STA SCREEN_RAM + (NUM_COLS * 23),X
+        LDA logoLineTwo,X
+        STA SCREEN_RAM + (NUM_COLS * 24),X
+        LDA #GRAY1
+        STA COLOR_RAM + (NUM_COLS * 23),X
+        LDA #GRAY1
+        STA COLOR_RAM + (NUM_COLS * 24),X
+        INX 
+        CPX #len(logoLineOne)
+        BNE _Loop
+
+        RTS
 
 statusLineOne   .TEXT "*** KLINGE MODE *** HAVE FUN- USE S,C,F1"
 statusLineTwo   .TEXT "      SYMMETRY .... CURSOR SPEED 0      "
@@ -999,7 +1021,7 @@ UpdateCurrentSettingsDisplay
 _Loop   LDA statusLineTwo,X
         AND #$3F
         STA SCREEN_RAM + (NUM_COLS * 18),X
-        LDA #$0B
+        LDA #GRAY1
         STA COLOR_RAM + (NUM_COLS * 18),X
         INX 
         CPX #NUM_COLS
