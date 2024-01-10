@@ -1,19 +1,24 @@
-RAM_ACCESS_MODE = $01
-defaultColorValue = $06
-currentChar = $07
-a08 = $08
-a09 = $09
-screenLinesLoPtr = $02
-screenLinesHiPtr = $03
-currentCharXPos = $04
-currentCharYPos = $05
-shiftKey                         = $028D
-screenLinesLoPtrArray = $0340
-screenLinesHiPtrArray = $0360
-currentRasterArrayIndex = $0A
-currentPressedKey = $C5
-indexIntoDataChars = $D0
+RAM_ACCESS_MODE               = $01
+screenLinesLoPtr              = $02
+screenLinesHiPtr              = $03
+currentCharXPos               = $04
+currentCharYPos               = $05
+defaultColorValue             = $06
+currentChar                   = $07
+a08                           = $08
+a09                           = $09
+currentRasterArrayIndex       = $0A
+xPosLoPtr                     = $0D
+xPosHiPtr                     = $0E
+yPosLoPtr                     = $10
+yPosHiPtr                     = $11
+currentPressedKey             = $C5
+indexIntoDataChars            = $D0
 indexToBackgroundControlArray = $D1
+
+shiftKey                      = $028D
+screenLinesLoPtrArray         = $0340
+screenLinesHiPtrArray         = $0360
 
 .include "constants.asm"
 
@@ -48,7 +53,6 @@ LaunchPsychedelia
         JSR InitializeColorIndexArray
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
-        JSR DisplayLogo
         CLI 
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
@@ -637,6 +641,30 @@ presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
 emptyColor                .BYTE BLACK
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
+
+; A pair of arrays together consituting a list of pointers
+; to positions in memory containing X position data.
+; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
+pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXPosArray
+                         .BYTE <starTwoXPosArray,<deltoidXPosArray,<diffusedXPosArray
+                         .BYTE <multicrossXPosArray,<pulsarXPosArray
+
+
+pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXPosArray
+                         .BYTE >starTwoXPosArray,>deltoidXPosArray,>diffusedXPosArray
+                         .BYTE >multicrossXPosArray,>pulsarXPosArray
+
+; A pair of arrays together consituting a list of pointers
+; to positions in memory containing Y position data.
+; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
+pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYPosArray
+                         .BYTE <starTwoYPosArray,<deltoidYPosArray,<diffusedYPosArray
+                         .BYTE <multicrossYPosArray,<pulsarYPosArray
+
+pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYPosArray
+                         .BYTE >starTwoYPosArray,>deltoidYPosArray,>diffusedYPosArray
+                         .BYTE >multicrossYPosArray,>pulsarYPosArray
+
 ;--------------------------------------------------------
 ; PaintStructureAtCurrentPosition
 ;--------------------------------------------------------
@@ -653,12 +681,23 @@ PaintStructureAtCurrentPosition
         JSR PaintPixelForCurrentSymmetry
 
         LDA currentColorIndex
-        BNE PixelPaintLoop
+        BNE CanPaint
         RTS 
 
+CanPaint
+        LDX patternIndex
+        LDA pixelXPositionLoPtrArray,X
+        STA xPosLoPtr
+        LDA pixelXPositionHiPtrArray,X
+        STA xPosHiPtr
+        LDA pixelYPositionLoPtrArray,X
+        STA yPosLoPtr
+        LDA pixelYPositionHiPtrArray,X
+        STA yPosHiPtr
+
 PixelPaintLoop   
-        LDX currentPatternIndex
-        LDA patternXPosArray,X
+        LDY currentPatternIndex
+        LDA (xPosLoPtr),Y
         CMP #$55
         BEQ MoveToNextLineInPattern
 
@@ -666,7 +705,7 @@ PixelPaintLoop
         ADC currentPixelXPosition
         STA initialPixelXPosition
 
-        LDA patternYPosArray,X
+        LDA (yPosLoPtr),Y
         CLC 
         ADC currentPixelYPosition
         STA initialPixelYPosition
@@ -684,27 +723,19 @@ MoveToNextLineInPattern
         BNE PixelPaintLoop
         RTS 
 
-patternXPosArray             
-        .BYTE $FF,$01,$55    ; 6              
-        .BYTE $FE,$02,$55    ;            5   
-        .BYTE $FD,$03,$55    ;   4            
-        .BYTE $FC,$04,$55    ;          3     
-        .BYTE $FB,$05,$55    ;     2          
-        .BYTE $FA,$06,$55    ;        1       
-        .BYTE $55,$55        ;                
-patternYPosArray             ;      1         
-        .BYTE $01,$FF,$55    ;         2      
-        .BYTE $FE,$02,$55    ;    3           
-        .BYTE $03,$FD,$55    ;           4    
-        .BYTE $FC,$04,$55    ;  5             
-        .BYTE $05,$FB,$55    ;             6 
-        .BYTE $FA,$06,$55
-        .BYTE $55,$55
-
 currentColorIndex     .BYTE $07
 currentPixelXPosition .BYTE $15
 currentPixelYPosition .BYTE $06
-sYmmetrySettingForStep
+patternIndexArray
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+symmetrySettingForStep
         .BYTE $01,$01,$01,$01,$01,$01,$01,$01
         .BYTE $01,$01,$01,$01,$01,$01,$01,$01
         .BYTE $01,$01,$01,$01,$01,$01,$01,$01
@@ -771,6 +802,8 @@ _Loop   LDA #$08
         BNE _Loop
 b7C51   RTS 
 
+currentPatternElement .BYTE $00
+patternIndex          .BYTE $00
 ;--------------------------------------------------------
 ; MaybeFirePressed
 ;--------------------------------------------------------
@@ -795,6 +828,9 @@ MaybeFirePressed
 
         LDA currentSymmetrySetting
         STA symmetrySettingForStep,X
+
+        LDA currentPatternElement
+        STA patternIndexArray,X
 
         LDA #$0C
         STA smoothingDelayArray,X
@@ -826,6 +862,9 @@ MaybeUpdateFromBuffersAndPaint
         STA currentPixelXPosition
         LDA pixelYPositionArray,X
         STA currentPixelYPosition
+
+        LDA patternIndexArray,X
+        STA patternIndex
 
         LDA currentColorIndexArray,X
         STA currentColorIndex
@@ -884,12 +923,13 @@ MaybeSKeyPressed
         STA currentSymmetrySetting
 
 UpdateStatusLineAndReturn   
+        JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
         RTS 
 
 MaybeCKeyPressed   
         CMP #KEY_C
-        BNE MaybeF1Pressed
+        BNE MaybeSpacePressed
 
         ; C pressed.
         ; Cursor Speed C to activate: Just that. Gives you a slow or fast little
@@ -904,12 +944,27 @@ MaybeCKeyPressed
         STA cursorSpeed
         JMP UpdateStatusLineAndReturn
 
+MaybeSpacePressed
+        CMP #KEY_SPACE ; Space pressed?
+        BNE MaybeF1Pressed
+
+        ; Space pressed. Selects a new pattern element. " There are eight permanent ones,
+        ; and eight you can define for yourself (more on this later!). The latter eight
+        ; are all set up when you load, so you can always choose from 16 shapes."
+        LDA #$01
+        STA processingKeyStroke
+        INC currentPatternElement
+        LDA currentPatternElement
+        AND #$07
+        STA currentPatternElement
+        JMP UpdateStatusLineAndReturn
+
 MaybeF1Pressed   
         CMP #KEY_F1_F2
         BEQ CycleBackgroundColor
         RTS
 
-cursorSpeed         .BYTE $02
+cursorSpeed         .BYTE $01
 processingKeyStroke .BYTE $00
 
 ;--------------------------------------------------------
@@ -975,16 +1030,18 @@ CheckCurrentBorderColor
         RTS 
 
 currentBorderColor   .BYTE BLACK
+STATUS_LINE_POSITION = NUM_COLS * 12
 ;--------------------------------------------------------
 ; InitializeStatusDisplayText
 ;--------------------------------------------------------
 InitializeStatusDisplayText   
+        JSR DisplayLogo
         LDX #$00
 _Loop   LDA statusLineOne,X
         AND #$3F
-        STA SCREEN_RAM,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION,X
         LDA #GRAY1
-        STA COLOR_RAM,X
+        STA COLOR_RAM + STATUS_LINE_POSITION,X
         INX 
         CPX #NUM_COLS
         BNE _Loop
@@ -992,19 +1049,21 @@ _Loop   LDA statusLineOne,X
 
 logoLineOne .BYTE $76,$78,$7E,$80
 logoLineTwo .BYTE $77,$79,$7F,$81
+LOGO_LINE_POSITION = NUM_COLS * 9 
+LOGO_COL_POSITION = 16
 ;--------------------------------------------------------
 ; DisplayLogo
 ;--------------------------------------------------------
 DisplayLogo   
         LDX #$00
 _Loop   LDA logoLineOne,X
-        STA SCREEN_RAM + (NUM_COLS * 23),X
+        STA SCREEN_RAM + LOGO_LINE_POSITION+LOGO_COL_POSITION,X
         LDA logoLineTwo,X
-        STA SCREEN_RAM + (NUM_COLS * 24),X
+        STA SCREEN_RAM + LOGO_LINE_POSITION + NUM_COLS+LOGO_COL_POSITION,X
         LDA #GRAY2
-        STA COLOR_RAM + (NUM_COLS * 23),X
+        STA COLOR_RAM + LOGO_LINE_POSITION+LOGO_COL_POSITION,X
         LDA #GRAY2
-        STA COLOR_RAM + (NUM_COLS * 24),X
+        STA COLOR_RAM + LOGO_LINE_POSITION + NUM_COLS+LOGO_COL_POSITION,X
         INX 
         CPX #len(logoLineOne)
         BNE _Loop
@@ -1012,7 +1071,7 @@ _Loop   LDA logoLineOne,X
         RTS
 
 ;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "SYM      SP                             "
+statusLineOne   .TEXT "SYMMETRY      SPEED   PATTERN           "
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
@@ -1022,25 +1081,49 @@ UpdateCurrentSettingsDisplay
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + 13 
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 20 
 
+        ; Update Symmetry
         LDA currentSymmetrySetting
         ASL 
         ASL 
         TAY 
 
-        ; Update Symmetry
         LDX #$00
-_Loop2  LDA symmetrySettingTxt,Y
+_Loop   LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + 4,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 9,X
         INY 
         INX 
         CPX #$04
-        BNE _Loop2
+        BNE _Loop
 
+        ; Update Symmetry
+        LDA currentPatternElement
+        ASL 
+        ASL  
+        ASL  
+        TAY 
+
+        LDX #$00
+_Loop2  LDA patternTxt,Y
+        AND #$3F
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 30,X
+        INY 
+        INX 
+        CPX #$08
+        BNE _Loop2
         RTS 
 
+patternTxt
+        .TEXT 'STAR ONE'
+        .TEXT 'TWIST   '
+        .TEXT 'LLAMITA '
+        .TEXT 'STAR TWO'
+        .TEXT 'DELTOIDS'
+        .TEXT 'DIFFUSED'
+        .TEXT 'CROSS   '
+        .TEXT 'PULSAR  '
 symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
 currentBackgroundColor .BYTE $00
 currentSymmetrySetting .BYTE $01,$DD
@@ -1167,3 +1250,4 @@ b7223   LDA rollingHorizonCharacters,Y
 
 * = $2000
 .include "charset.asm"
+.include "patterns.asm"

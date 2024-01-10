@@ -1184,7 +1184,7 @@ rollingHorizonCharacters
                                                 ; 10110111   * ** ***
                                                 ; 10010001   *  *   *
                                                 ; 11111111   ********
-        .BYTE $7F,$1C,$4E,$4E,$4E,$4E,$4E,$46   ;.BYTE $7F,$1C,$4E,$4E,$4E,$4E,$4E,$46
+        .BYTE $FF,$9C,$CE,$CE,$CE,$CE,$CE,$C6   ;.BYTE $7F,$1C,$4E,$4E,$4E,$4E,$4E,$46
                                                 ; CHARACTER $75
                                                 ; 01111111    *******
                                                 ; 00011100      ***  
@@ -1194,7 +1194,7 @@ rollingHorizonCharacters
                                                 ; 01001110    *  *** 
                                                 ; 01001110    *  *** 
                                                 ; 01000110    *   ** 
-        .BYTE $60,$78,$7E,$7E,$7E,$7E,$7C,$7F   ;.BYTE $60,$78,$7E,$7E,$7E,$7E,$7C,$7F
+        .BYTE $E0,$F8,$FE,$FE,$FE,$FE,$FC,$FF   ;.BYTE $60,$78,$7E,$7E,$7E,$7E,$7C,$7F
                                                 ; CHARACTER $76
                                                 ; 01100000    **     
                                                 ; 01111000    ****   
