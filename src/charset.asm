@@ -1265,7 +1265,7 @@ rollingHorizonCharacters
                                                 ; 11111111   ********
                                                 ; 11111111   ********
 logoIIPart
-        .BYTE $FF,$80,$E3,$E3,$E3,$E3,$E3,$E3
+        .BYTE $FF,$00,$E3,$E3,$E3,$E3,$E3,$E3
                                                 ; CHARACTER $7d
                                                 ; 11111111    *******
                                                 ; 10000000    *      

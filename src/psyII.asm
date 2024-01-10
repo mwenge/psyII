@@ -46,8 +46,8 @@ LaunchPsychedelia
         JSR InitializePsychedelia
         JSR SetUpBackgroundPainting
         JSR InitializeColorIndexArray
-        ;JSR InitializeStatusDisplayText
-        ;JSR UpdateCurrentSettingsDisplay
+        JSR InitializeStatusDisplayText
+        JSR UpdateCurrentSettingsDisplay
         JSR DisplayLogo
         CLI 
 PsychedeliaLoop   
@@ -884,7 +884,7 @@ MaybeSKeyPressed
         STA currentSymmetrySetting
 
 UpdateStatusLineAndReturn   
-        ;JSR UpdateCurrentSettingsDisplay
+        JSR UpdateCurrentSettingsDisplay
         RTS 
 
 MaybeCKeyPressed   
@@ -982,9 +982,9 @@ InitializeStatusDisplayText
         LDX #$00
 _Loop   LDA statusLineOne,X
         AND #$3F
-        STA SCREEN_RAM + (NUM_COLS * 20),X
+        STA SCREEN_RAM,X
         LDA #GRAY1
-        STA COLOR_RAM + (NUM_COLS * 20),X
+        STA COLOR_RAM,X
         INX 
         CPX #NUM_COLS
         BNE _Loop
@@ -1001,9 +1001,9 @@ _Loop   LDA logoLineOne,X
         STA SCREEN_RAM + (NUM_COLS * 23),X
         LDA logoLineTwo,X
         STA SCREEN_RAM + (NUM_COLS * 24),X
-        LDA #GRAY1
+        LDA #GRAY2
         STA COLOR_RAM + (NUM_COLS * 23),X
-        LDA #GRAY1
+        LDA #GRAY2
         STA COLOR_RAM + (NUM_COLS * 24),X
         INX 
         CPX #len(logoLineOne)
@@ -1011,36 +1011,29 @@ _Loop   LDA logoLineOne,X
 
         RTS
 
-statusLineOne   .TEXT "*** KLINGE MODE *** HAVE FUN- USE S,C,F1"
-statusLineTwo   .TEXT "      SYMMETRY .... CURSOR SPEED 0      "
+;                      0123456789012345678901234567890123456789
+statusLineOne   .TEXT "SYM      SP                             "
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
 UpdateCurrentSettingsDisplay   
-        LDX #$00
-_Loop   LDA statusLineTwo,X
-        AND #$3F
-        STA SCREEN_RAM + (NUM_COLS * 18),X
-        LDA #GRAY1
-        STA COLOR_RAM + (NUM_COLS * 18),X
-        INX 
-        CPX #NUM_COLS
-        BNE _Loop
 
+        ; Update Cursor Speed
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + (NUM_COLS * 18) + 33
+        STA SCREEN_RAM + 13 
 
         LDA currentSymmetrySetting
         ASL 
         ASL 
         TAY 
 
+        ; Update Symmetry
         LDX #$00
 _Loop2  LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + (NUM_COLS * 18) + 15,X
+        STA SCREEN_RAM + 4,X
         INY 
         INX 
         CPX #$04
