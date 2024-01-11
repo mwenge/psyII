@@ -30,6 +30,9 @@ xPosLoPtr                     = $0D
 xPosHiPtr                     = $0E
 yPosLoPtr                     = $10
 yPosHiPtr                     = $11
+enemyXPosition                = $12
+enemyYPosition                = $13
+
 currentPressedKey             = $C5
 indexIntoDataChars            = $D0
 indexToBackgroundControlArray = $D1
@@ -75,7 +78,41 @@ LaunchPsychedelia
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
         JSR CheckKeyboardInput
+        JSR MaybeResetGrid
         JMP PsychedeliaLoop
+
+
+shouldResetGrid .BYTE $00
+;---------------------------------------------------------------------------------
+; MaybeResetGrid
+;---------------------------------------------------------------------------------
+MaybeResetGrid
+        LDA shouldResetGrid
+        BEQ ReturnFromResetGrid 
+        
+CanResetGrid
+        LDA #$00
+        STA fillCount
+        STA fillCount2
+        STA shouldResetGrid
+
+        JSR CycleBackgroundColor
+
+        JSR PutRandomByteInAccumulator
+        AND #$07
+        STA currentPatternElement
+        AND #$03
+        STA currentSymmetrySetting
+        AND #$03
+        ORA #$01
+        STA cursorSpeed
+
+        JSR ResetGrid
+        JSR InitializeStatusDisplayText
+        JSR UpdateCurrentSettingsDisplay
+
+ReturnFromResetGrid 
+        RTS
 
 a40D7   .BYTE $03
 a4142   .BYTE $01
@@ -218,11 +255,32 @@ GetCurrentCharAddress
         STA screenLinesHiPtr
         RTS 
 
+fillCount  .BYTE $00
+fillCount2 .BYTE $00
+;---------------------------------------------------------------------------------
+; IncrementFillCounter
+;---------------------------------------------------------------------------------
+IncrementFillCounter
+        INC fillCount
+        BEQ LSBReset
+        RTS
+LSBReset
+        LDA #$00
+        STA fillCount
+        INC fillCount2
+        BEQ IncrementFillCounter
+        RTS
+
 ;---------------------------------------------------------------------------------
 ; WriteCurrentCharToScreen
 ;---------------------------------------------------------------------------------
 WriteCurrentCharToScreen   
         JSR GetCurrentCharAddress
+        LDA (screenLinesLoPtr),Y
+        CMP enemyByte
+        BEQ ReturnFromWriteCharToScreen
+
+WriteCharToScreen
         LDA currentChar
         STA (screenLinesLoPtr),Y
         LDA screenLinesHiPtr
@@ -237,6 +295,38 @@ WriteCurrentCharToScreen
 
         PLA 
         STA screenLinesHiPtr
+
+        JSR IncrementFillCounter
+        LDA fillCount2
+        CMP #3
+        BNE ReturnFromWriteCharToScreen
+        LDA fillCount
+        CMP #$98
+        BNE ReturnFromWriteCharToScreen
+
+        LDA #$01
+        STA shouldResetGrid
+
+ReturnFromWriteCharToScreen
+        RTS 
+
+;--------------------------------------------------------
+; ResetGrid
+;--------------------------------------------------------
+ResetGrid
+        LDX #$00
+_Loop   LDA #$82
+        STA SCREEN_RAM,X
+        STA SCREEN_RAM + $0100,X
+        STA SCREEN_RAM + $0200,X
+        STA SCREEN_RAM + $0300,X
+        LDA currentColorValue
+        STA COLOR_RAM,X
+        STA COLOR_RAM + $0100,X
+        STA COLOR_RAM + $0200,X
+        STA COLOR_RAM + $0300,X
+        DEX 
+        BNE _Loop
         RTS 
 
 ;--------------------------------------------------------
@@ -271,54 +361,11 @@ _Loop   LDA #SPACE
         LDA #$08
         STA $D40E    ;Voice 3: Frequency Control - Low-Byte
 
-        LDA #BOTTOM_Y_POSITION - 7
-        STA currentCharYPos
-
-        LDA #$63
-        STA currentChar
+        JSR ResetGrid
 
         LDA currentColorValue
         STA defaultColorValue
 
-SetUpScreenLoop   
-        LDA #$00
-        STA currentCharXPos
-
-InnerLoop  
-        JSR WriteCurrentCharToScreen
-
-        LDA currentCharYPos
-        PHA 
-        SEC 
-        SBC #BOTTOM_Y_POSITION - 7
-        STA currentCharYPos
-
-        LDA currentChar
-        PHA 
-        CLC 
-        CLC 
-        ADC #$5D
-        STA currentChar
-
-        JSR WriteCurrentCharToScreen
-
-        PLA 
-        STA currentChar
-
-        PLA 
-        STA currentCharYPos
-
-        INC currentCharXPos
-
-        LDA currentCharXPos
-        CMP #NUM_COLS
-        BNE InnerLoop
-
-        INC currentChar
-        INC currentCharYPos
-        LDA currentCharYPos
-        CMP #BOTTOM_Y_POSITION + 1
-        BNE SetUpScreenLoop
 
 SetUpSpritesAndVoiceRegisters
         LDA $D011    ;VIC Control Register 1
@@ -337,24 +384,6 @@ SetUpSpritesAndVoiceRegisters
         ;JSR ResetSomeDataAndClearMiddleScreen
 
 
-DrawTwoMiddleLines
-        LDX #$00
-_Loop   LDA #$42
-        STA SCREEN_RAM + (NUM_COLS * 8),X
-        LDA currentColorValue
-        STA COLOR_RAM + (NUM_COLS * 8),X
-        INX 
-        CPX #(6 * NUM_COLS)
-        BNE _Loop
-
-        LDX #$00
-_Loop2  LDA #$42
-        STA SCREEN_RAM + (NUM_COLS * 14),X
-        LDA currentColorValue
-        STA COLOR_RAM + (NUM_COLS * 14),X
-        INX 
-        CPX #(3 * NUM_COLS)
-        BNE _Loop2
         RTS 
 
 ;--------------------------------------------------------
@@ -399,13 +428,13 @@ PaintBackgroundColor
         STA $D020    ;Border Color
         STA $D021    ;Background Color 0
 
-        JSR UpdateBackgroundData
-        JSR FetchBackgroundData
-        JSR WriteLinesToScreen
+        ;JSR UpdateBackgroundData
+        ;JSR FetchBackgroundData
+        JSR CheckJoystickAndUpdateCursor
         JSR $FF9F ;$FF9F - scan keyboard                    
         JMP IncrementAndUpdateRaster
 
-currentColorValue .BYTE BLACK
+currentColorValue .BYTE RED
 cursorXPosition   .BYTE $15
 cursorYPosition   .BYTE $0B
 colorValueToWrite .BYTE WHITE
@@ -432,9 +461,9 @@ WriteValueToColorRAM
         RTS 
 
 ;--------------------------------------------------------
-; WriteLinesToScreen
+; CheckJoystickAndUpdateCursor
 ;--------------------------------------------------------
-WriteLinesToScreen   
+CheckJoystickAndUpdateCursor   
         LDA currentColorValue
         STA colorValueToWrite
 
@@ -534,8 +563,8 @@ colorRAMHiPtr = $26
 ; PaintPixel
 ;--------------------------------------------------------
 PaintPixel   
-        LDX initialPixelYPosition
-        LDY initialPixelXPosition
+        LDX pixelToPaintYPosition
+        LDY pixelToPaintXPosition
         LDA screenLinesLoPtrArray,X
         STA colorRAMLoPtr
         LDA screenLinesHiPtrArray,X
@@ -555,6 +584,7 @@ PaintPixel
         RTS 
 
 ActuallyPaintPixel   
+        JSR DrawEnemy
         LDA currentColor
         STA (colorRAMLoPtr),Y
         RTS 
@@ -565,15 +595,15 @@ colorComparisonArray
         .BYTE ORANGE
 
 lastColorValue        .BYTE $07
-currentColor          .BYTE BLACK
-initialPixelYPosition .BYTE $0C
-initialPixelXPosition .BYTE $0C
+currentColor          .BYTE RED
+pixelToPaintYPosition .BYTE $0C
+pixelToPaintXPosition .BYTE $0C
 
 ;--------------------------------------------------------
 ; PaintPixelForCurrentSymmetry
 ;--------------------------------------------------------
 PaintPixelForCurrentSymmetry   
-        LDA initialPixelYPosition
+        LDA pixelToPaintYPosition
         AND #$80
         BEQ CanPaintPixelOnThisLine
 
@@ -581,15 +611,15 @@ CleanUpAndReturn
         RTS 
 
 CanPaintPixelOnThisLine   
-        LDA initialPixelYPosition
+        LDA pixelToPaintYPosition
         CMP #BOTTOM_Y_POSITION+1
         BPL CleanUpAndReturn
 
-        LDA initialPixelXPosition
+        LDA pixelToPaintXPosition
         AND #$80
         BNE CleanUpAndReturn
 
-        LDA initialPixelXPosition
+        LDA pixelToPaintXPosition
         CMP #NUM_COLS
         BPL CleanUpAndReturn
 
@@ -616,8 +646,8 @@ HasSymmetry
 
         LDA #NUM_COLS-1
         SEC 
-        SBC initialPixelXPosition
-        STA initialPixelXPosition
+        SBC pixelToPaintXPosition
+        STA pixelToPaintXPosition
 
         JSR PaintPixel
 
@@ -627,36 +657,36 @@ HasSymmetry
 
         LDA #BOTTOM_Y_POSITION
         SEC 
-        SBC initialPixelYPosition
-        STA initialPixelYPosition
+        SBC pixelToPaintYPosition
+        STA pixelToPaintYPosition
 
         JSR PaintPixel
 
         LDA #NUM_COLS-1
         SEC 
-        SBC initialPixelXPosition
-        STA initialPixelXPosition
+        SBC pixelToPaintXPosition
+        STA pixelToPaintXPosition
 
         JMP PaintPixel
 
 HasXYSymmetry   
         LDA #BOTTOM_Y_POSITION
         SEC 
-        SBC initialPixelYPosition
-        STA initialPixelYPosition
+        SBC pixelToPaintYPosition
+        STA pixelToPaintYPosition
 
         JMP PaintPixel
 
 HasXAxisSymmetry   
         LDA #NUM_COLS-1
         SEC 
-        SBC initialPixelXPosition
-        STA initialPixelXPosition
+        SBC pixelToPaintXPosition
+        STA pixelToPaintXPosition
         JMP HasXYSymmetry
 
 currentSymmetrySettingForStep .BYTE $01
 presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
-emptyColor                .BYTE BLACK
+emptyColor                    .BYTE RED
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
 
@@ -692,9 +722,9 @@ PaintStructureAtCurrentPosition
         STA currentLineInPattern
 
         LDA currentPixelXPosition
-        STA initialPixelXPosition
+        STA pixelToPaintXPosition
         LDA currentPixelYPosition
-        STA initialPixelYPosition
+        STA pixelToPaintYPosition
 
         JSR PaintPixelForCurrentSymmetry
 
@@ -721,12 +751,12 @@ PixelPaintLoop
 
         CLC 
         ADC currentPixelXPosition
-        STA initialPixelXPosition
+        STA pixelToPaintXPosition
 
         LDA (yPosLoPtr),Y
         CLC 
         ADC currentPixelYPosition
-        STA initialPixelYPosition
+        STA pixelToPaintYPosition
 
         JSR PaintPixelForCurrentSymmetry
 
@@ -826,6 +856,7 @@ patternIndex          .BYTE $00
 ; MaybeFirePressed
 ;--------------------------------------------------------
 MaybeFirePressed   
+
         LDA lastJoystickInput
         AND #JOYSTICK_FIRE
         BNE b7C51
@@ -982,7 +1013,7 @@ MaybeF1Pressed
         BEQ CycleBackgroundColor
         RTS
 
-cursorSpeed         .BYTE $01
+cursorSpeed         .BYTE $02
 processingKeyStroke .BYTE $00
 
 ;--------------------------------------------------------
@@ -1049,7 +1080,7 @@ CheckCurrentBorderColor
 
 STATUS_LINE_POSITION = NUM_COLS * 23
 LOGO_LINE_POSITION   = NUM_COLS * 23
-LOGO_COL_POSITION    = 1
+LOGO_COL_POSITION    = 0
 
 currentBorderColor   .BYTE BLACK
 ;--------------------------------------------------------
@@ -1060,8 +1091,13 @@ InitializeStatusDisplayText
 _Loop   LDA statusLineOne,X
         AND #$3F
         STA SCREEN_RAM + STATUS_LINE_POSITION,X
+        LDA statusLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + STATUS_LINE_POSITION+NUM_COLS,X
         LDA #GRAY1
         STA COLOR_RAM + STATUS_LINE_POSITION,X
+        LDA #GRAY1
+        STA COLOR_RAM + STATUS_LINE_POSITION+NUM_COLS,X
         INX 
         CPX #NUM_COLS
         BNE _Loop
@@ -1091,6 +1127,7 @@ _Loop   LDA logoLineOne,X
 
 ;                      0123456789012345678901234567890123456789
 statusLineOne   .TEXT "       S:          C:   P:              "
+statusLineTwo   .TEXT "       SCORE: 00000000000000000000000000"
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
@@ -1144,7 +1181,7 @@ patternTxt
         .TEXT 'CROSS   '
         .TEXT 'PULSAR  '
 symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
-currentBackgroundColor .BYTE $00
+currentBackgroundColor .BYTE BLACK
 currentSymmetrySetting .BYTE $01,$DD
 
 LEN_INITIAL_ARRAY = $1C
@@ -1167,6 +1204,7 @@ indexArrayForBackgroundChars
 backgroundUpdateControlArray   
         .BYTE $00,$00,$00,$00,$00,$00,$00,$00
         .BYTE $00,$00,$00,$00,$00,$00,$00,$00
+
 
 ;---------------------------------------------------------------------------------
 ; UpdateBackgroundData
@@ -1253,20 +1291,46 @@ controlByteForUpdatingBackground
         .BYTE $01,$63,$64,$65,$66,$67,$68,$69
         .BYTE $6A,$6B,$6C,$6D,$6E,$6F
 
-;---------------------------------------------------------------------------------
-; FetchBackgroundData
-;---------------------------------------------------------------------------------
-FetchBackgroundData   
-        LDX #$FF
-        LDY #$00
-b7223   LDA rollingHorizonCharacters,Y
-        STA activeBackgroundCharacters,X
-        DEX 
-        INY 
-        CPY #$40
-        BNE b7223
+
+;-------------------------------------------------------
+; PutRandomByteInAccumulator
+;-------------------------------------------------------
+PutRandomByteInAccumulator   
+randomByteAddress   =*+$01
+        LDA $E199,X
+        INC randomByteAddress
+        RTS 
+
+
+;-------------------------------------------------------
+; GenerateEnemyPosition
+;-------------------------------------------------------
+GenerateEnemyPosition   
+        JSR PutRandomByteInAccumulator
+        AND #$1F
+        STA enemyXPosition
+        JSR PutRandomByteInAccumulator
+        AND #$1F
+        STA enemyYPosition
+        RTS 
+
+enemyByte .BYTE $2A
+;-------------------------------------------------------
+; DrawEnemy
+;-------------------------------------------------------
+DrawEnemy   
+        LDA pixelToPaintXPosition
+        STA currentCharXPos
+        LDA pixelToPaintYPosition
+        STA currentCharYPos
+        LDA enemyByte
+        STA currentChar
+        JSR WriteCurrentCharToScreen
+
+ReturnFromDrawEnemy
         RTS 
 
 * = $2000
 .include "charset.asm"
 .include "patterns.asm"
+; vim: tabstop=2 shiftwidth=2 expandtab smartindent

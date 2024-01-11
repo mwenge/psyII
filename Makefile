@@ -13,7 +13,7 @@ psyii.prg: src/psyII.asm
 #	echo "65d265c4a55235508353668b5c61b1dd  bin/psyii.prg" | md5sum -c
 
 run: psyii.prg
-	$(X64) -verbose $(D64_IMAGE)
+	$(X64) -autostartprgmode 1 $(D64_IMAGE)
 
 clean:
 	-rm bin/psyii.prg
