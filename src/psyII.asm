@@ -277,7 +277,7 @@ LSBReset
 WriteCurrentCharToScreen   
         JSR GetCurrentCharAddress
         LDA (screenLinesLoPtr),Y
-        CMP enemyByte
+        CMP #PAINTED_GRID
         BEQ ReturnFromWriteCharToScreen
 
 WriteCharToScreen
@@ -315,7 +315,7 @@ ReturnFromWriteCharToScreen
 ;--------------------------------------------------------
 ResetGrid
         LDX #$00
-_Loop   LDA #$82
+_Loop   LDA #UNPAINTED_GRID
         STA SCREEN_RAM,X
         STA SCREEN_RAM + $0100,X
         STA SCREEN_RAM + $0200,X
@@ -972,7 +972,6 @@ MaybeSKeyPressed
         STA currentSymmetrySetting
 
 UpdateStatusLineAndReturn   
-        JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
         RTS 
 
@@ -1126,8 +1125,8 @@ _Loop   LDA logoLineOne,X
         RTS
 
 ;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "       S:          C:   P:              "
-statusLineTwo   .TEXT "       SCORE: 00000000000000000000000000"
+statusLineOne   .TEXT "     S:          C:   P:                "
+statusLineTwo   .TEXT "     SCORE: 0000000000000000000000000000"
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
@@ -1137,7 +1136,7 @@ UpdateCurrentSettingsDisplay
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 22 
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 19 
 
         ; Update Symmetry
         LDA currentSymmetrySetting
@@ -1148,7 +1147,7 @@ UpdateCurrentSettingsDisplay
         LDX #$00
 _Loop   LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 11,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 8,X
         INY 
         INX 
         CPX #$04
@@ -1164,7 +1163,7 @@ _Loop   LDA symmetrySettingTxt,Y
         LDX #$00
 _Loop2  LDA patternTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 27,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 25,X
         INY 
         INX 
         CPX #$08
@@ -1314,7 +1313,6 @@ GenerateEnemyPosition
         STA enemyYPosition
         RTS 
 
-enemyByte .BYTE $2A
 ;-------------------------------------------------------
 ; DrawEnemy
 ;-------------------------------------------------------
@@ -1323,7 +1321,7 @@ DrawEnemy
         STA currentCharXPos
         LDA pixelToPaintYPosition
         STA currentCharYPos
-        LDA enemyByte
+        LDA #PAINTED_GRID
         STA currentChar
         JSR WriteCurrentCharToScreen
 
