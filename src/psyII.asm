@@ -1,3 +1,21 @@
+; This is the reverse-engineered and heavily modified source code for the 'Psychedelia' module in Batalyx,
+; written by Jeff Minter in 1985.
+;
+; The code in this file was created by disassembling a binary of the game released into
+; the public domain by Jeff Minter in 2019.
+;
+; The original code from which this source is derived is the copyright of Jeff Minter.
+;
+; The original home of this file is at: https://github.com/mwenge/psyII
+;
+; To the extent to which any copyright may apply to the act of disassembling and reconstructing
+; the code from its binary, the author disclaims copyright to this source code.  In place of
+; a legal notice, here is a blessing:
+;
+;    May you do good and not evil.
+;    May you find forgiveness for yourself and forgive others.
+;    May you share freely, never taking more than you give.
+
 RAM_ACCESS_MODE               = $01
 screenLinesLoPtr              = $02
 screenLinesHiPtr              = $03
@@ -253,7 +271,7 @@ _Loop   LDA #SPACE
         LDA #$08
         STA $D40E    ;Voice 3: Frequency Control - Low-Byte
 
-        LDA #TOP_Y_POSITION - 7
+        LDA #BOTTOM_Y_POSITION - 7
         STA currentCharYPos
 
         LDA #$63
@@ -272,7 +290,7 @@ InnerLoop
         LDA currentCharYPos
         PHA 
         SEC 
-        SBC #TOP_Y_POSITION - 7
+        SBC #BOTTOM_Y_POSITION - 7
         STA currentCharYPos
 
         LDA currentChar
@@ -299,7 +317,7 @@ InnerLoop
         INC currentChar
         INC currentCharYPos
         LDA currentCharYPos
-        CMP #TOP_Y_POSITION + 1
+        CMP #BOTTOM_Y_POSITION + 1
         BNE SetUpScreenLoop
 
 SetUpSpritesAndVoiceRegisters
@@ -459,7 +477,7 @@ UpPressed
         CMP #BELOW_ZERO
         BNE MaybeDownPressed
 
-        LDA #TOP_Y_POSITION
+        LDA #BOTTOM_Y_POSITION
         STA cursorYPosition
 
 MaybeDownPressed   
@@ -470,7 +488,7 @@ MaybeDownPressed
 DownPressed
         INC cursorYPosition
         LDA cursorYPosition
-        CMP #TOP_Y_POSITION+1
+        CMP #BOTTOM_Y_POSITION+1
         BNE MaybeLeftPressed
 
         LDA #$00
@@ -564,7 +582,7 @@ CleanUpAndReturn
 
 CanPaintPixelOnThisLine   
         LDA initialPixelYPosition
-        CMP #TOP_Y_POSITION+1
+        CMP #BOTTOM_Y_POSITION+1
         BPL CleanUpAndReturn
 
         LDA initialPixelXPosition
@@ -607,7 +625,7 @@ HasSymmetry
         CMP #Y_AXIS_SYMMETRY
         BEQ ReturnFromSymmetry
 
-        LDA #TOP_Y_POSITION
+        LDA #BOTTOM_Y_POSITION
         SEC 
         SBC initialPixelYPosition
         STA initialPixelYPosition
@@ -622,7 +640,7 @@ HasSymmetry
         JMP PaintPixel
 
 HasXYSymmetry   
-        LDA #TOP_Y_POSITION
+        LDA #BOTTOM_Y_POSITION
         SEC 
         SBC initialPixelYPosition
         STA initialPixelYPosition
@@ -1029,13 +1047,15 @@ CheckCurrentBorderColor
         LDA currentColorValue
         RTS 
 
+STATUS_LINE_POSITION = NUM_COLS * 23
+LOGO_LINE_POSITION   = NUM_COLS * 23
+LOGO_COL_POSITION    = 1
+
 currentBorderColor   .BYTE BLACK
-STATUS_LINE_POSITION = NUM_COLS * 12
 ;--------------------------------------------------------
 ; InitializeStatusDisplayText
 ;--------------------------------------------------------
 InitializeStatusDisplayText   
-        JSR DisplayLogo
         LDX #$00
 _Loop   LDA statusLineOne,X
         AND #$3F
@@ -1045,12 +1065,11 @@ _Loop   LDA statusLineOne,X
         INX 
         CPX #NUM_COLS
         BNE _Loop
+        JSR DisplayLogo
         RTS 
 
 logoLineOne .BYTE $76,$78,$7E,$80
 logoLineTwo .BYTE $77,$79,$7F,$81
-LOGO_LINE_POSITION = NUM_COLS * 9 
-LOGO_COL_POSITION = 16
 ;--------------------------------------------------------
 ; DisplayLogo
 ;--------------------------------------------------------
@@ -1071,7 +1090,7 @@ _Loop   LDA logoLineOne,X
         RTS
 
 ;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "SYMMETRY      SPEED   PATTERN           "
+statusLineOne   .TEXT "       S:          C:   P:              "
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
@@ -1081,7 +1100,7 @@ UpdateCurrentSettingsDisplay
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 20 
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 22 
 
         ; Update Symmetry
         LDA currentSymmetrySetting
@@ -1092,7 +1111,7 @@ UpdateCurrentSettingsDisplay
         LDX #$00
 _Loop   LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 9,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 11,X
         INY 
         INX 
         CPX #$04
@@ -1108,7 +1127,7 @@ _Loop   LDA symmetrySettingTxt,Y
         LDX #$00
 _Loop2  LDA patternTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 30,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 27,X
         INY 
         INX 
         CPX #$08
