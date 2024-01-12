@@ -71,7 +71,7 @@ LaunchPsychedelia
         SEI 
         JSR InitializePsychedelia
         JSR SetUpBackgroundPainting
-        JSR InitializeColorIndexArray
+        JSR InitializeArrays
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
@@ -113,8 +113,6 @@ CanResetGrid
 ReturnFromResetGrid 
         RTS
 
-a40D7   .BYTE $03
-a4142   .BYTE $01
 ;---------------------------------------------------------------------------------
 ; SetUpInterrupts
 ;---------------------------------------------------------------------------------
@@ -126,10 +124,10 @@ SetUpInterrupts
         STA $0314    ;IRQ
         LDA #>TitleScreenInterruptHandler
         STA $0315    ;IRQ
+
         LDA #$00
         STA currentRasterArrayIndex
         JSR UpdateRasterPosition
-        JSR InitializeRasterJumpTablePtrArray
 
         LDA #$01
         STA $D01A    ;VIC Interrupt Mask Register (IMR)
@@ -155,30 +153,9 @@ b4224   STA $D012    ;Raster Position
         STA $D019    ;VIC Interrupt Request Register (IRR)
         RTS 
 
-rasterJumpTableLoPtr2=*+$01
-rasterJumpTableLoPtr3=*+$02
-rasterJumpTableLoPtrArray .BYTE $55,$55
-                          .BYTE $22,$22,$22,$22,$46,$46,$46,$46
-                          .BYTE $46,$46
-rasterJumpTableHiPtr2=*+$01
-rasterJumpTableHiPtr3=*+$02
-rasterJumpTableHiPtrArray .BYTE $C0,$C0
-                          .BYTE $C3,$C3,$C3,$C3,$42,$42,$42,$42
-                          .BYTE $42,$42
+rasterJumpTableLoPtrArray .BYTE $55,$55,$55
+rasterJumpTableHiPtrArray .BYTE $C0,$C0,$C0
 rasterPositionArray       .BYTE $E0,$FF,$C0,$FF,$A0,$C0,$FF
-;---------------------------------------------------------------------------------
-; InitializeRasterJumpTablePtrArray
-;---------------------------------------------------------------------------------
-InitializeRasterJumpTablePtrArray   
-        LDX #$00
-b4574   LDA #$46
-        STA rasterJumpTableLoPtrArray,X
-        LDA #$42
-        STA rasterJumpTableHiPtrArray,X
-        INX 
-        CPX #$0C
-        BNE b4574
-        RTS 
 
 ;---------------------------------------------------------------------------------
 ; TitleScreenInterruptHandler
@@ -581,14 +558,9 @@ SetUpSpritesAndVoiceRegisters
 
         LDA #$00
         STA $D015    ;Sprite display Enable
-        STA a40D7
-        STA a4142
         STA $D404    ;Voice 1: Control Register
         STA $D40B    ;Voice 2: Control Register
         STA $D412    ;Voice 3: Control Register
-
-        ;JSR ResetSomeDataAndClearMiddleScreen
-
 
         RTS 
 
@@ -597,7 +569,7 @@ SetUpSpritesAndVoiceRegisters
 ;--------------------------------------------------------
 SetUpBackgroundPainting   
         LDX #$00
-b78A4   LDA psyRasterPositionArray,X
+_Loop   LDA psyRasterPositionArray,X
         STA rasterPositionArray,X
         LDA psyRasterJumpTableLoPtrArray,X
         STA rasterJumpTableLoPtrArray,X
@@ -605,7 +577,7 @@ b78A4   LDA psyRasterPositionArray,X
         STA rasterJumpTableHiPtrArray,X
         INX 
         CPX #$03
-        BNE b78A4
+        BNE _Loop
         RTS 
 
 psyRasterPositionArray       .BYTE $C0,$FF,$FF
@@ -634,23 +606,20 @@ PaintBackgroundColor
         STA $D020    ;Border Color
         STA $D021    ;Background Color 0
 
-        ;JSR UpdateBackgroundData
-        ;JSR FetchBackgroundData
         JSR CheckJoystickAndUpdateCursor
         JSR $FF9F ;$FF9F - scan keyboard                    
         JMP IncrementAndUpdateRaster
 
-currentColorValue .BYTE RED
 cursorXPosition   .BYTE $15
 cursorYPosition   .BYTE $0B
-colorValueToWrite .BYTE WHITE
+colorValueForCursor .BYTE WHITE
 
 screenRAMLoPtr = $23
 screenRAMHiPtr = $24
 ;--------------------------------------------------------
-; WriteValueToColorRAM
+; WriteCursorValueToColorRAM
 ;--------------------------------------------------------
-WriteValueToColorRAM   
+WriteCursorValueToColorRAM   
         LDY cursorXPosition
         LDX cursorYPosition
 
@@ -662,7 +631,7 @@ WriteValueToColorRAM
         ADC #OFFSET_TO_COLOR_RAM
         STA screenRAMHiPtr
 
-        LDA colorValueToWrite
+        LDA colorValueForCursor
         STA (screenRAMLoPtr),Y
         RTS 
 
@@ -671,15 +640,15 @@ WriteValueToColorRAM
 ;--------------------------------------------------------
 CheckJoystickAndUpdateCursor   
         LDA currentColorValue
-        STA colorValueToWrite
+        STA colorValueForCursor
 
-        JSR WriteValueToColorRAM
+        JSR WriteCursorValueToColorRAM
         JSR MaybeCheckJoystickInput
 
         LDA #WHITE
-        STA colorValueToWrite
+        STA colorValueForCursor
 
-        JSR WriteValueToColorRAM
+        JSR WriteCursorValueToColorRAM
         RTS 
 
 ;--------------------------------------------------------
@@ -790,7 +759,7 @@ PaintPixel
         RTS 
 
 ActuallyPaintPixel   
-        JSR DrawEnemy
+        JSR DrawPainted
         LDA currentColor
         STA (colorRAMLoPtr),Y
         RTS 
@@ -892,7 +861,10 @@ HasXAxisSymmetry
 
 currentSymmetrySettingForStep .BYTE $01
 presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
+
 emptyColor                    .BYTE RED
+currentColorValue             .BYTE RED
+
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
 
@@ -1062,18 +1034,6 @@ _Loop   LDA #$00
         CPX #$40
         BNE _Loop
         RTS 
-
-;--------------------------------------------------------
-; InitializeColorIndexArray
-;--------------------------------------------------------
-InitializeColorIndexArray   
-        LDX #$00
-_Loop   LDA #$08
-        STA currentColorIndexArray,X
-        INX 
-        CPX #$40
-        BNE _Loop
-b7C51   RTS 
 
 currentPatternElement .BYTE $00
 patternIndex          .BYTE $00
@@ -1355,7 +1315,8 @@ patternTxt
         .TEXT 'DIFFUSED'
         .TEXT 'CROSS   '
         .TEXT 'PULSAR  '
-symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
+symmetrySettingTxt
+        .TEXT "NONE Y   X  X-Y QUAD"
 
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
@@ -1496,114 +1457,6 @@ FinishedUpdatingScores
 currentBackgroundColor .BYTE BLACK
 currentSymmetrySetting .BYTE $01,$DD
 
-LEN_INITIAL_ARRAY = $1C
-initialBackgroundUpdateControlArray   
-        .BYTE $08,$08,$08,$08,$04,$04,$04,$04
-        .BYTE $02,$02,$02,$02,$01,$01,$01,$01
-        .BYTE $01,$01,$01,$01,$01,$01,$01,$01
-        .BYTE $01,$01,$01,$01
-
-numberOfUpdatesToMakeToChars   
-        .BYTE $01,$01,$01,$01,$02,$02,$02,$02
-        .BYTE $03,$03,$03,$03,$04,$04,$04,$04
-        .BYTE $05,$05,$05,$05,$06,$06,$06,$06
-        .BYTE $07,$07,$07,$07,$08,$08,$08,$08
-
-LEN_BG_CTRL_ARRAY = $10
-indexArrayForBackgroundChars   
-        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
-        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
-backgroundUpdateControlArray   
-        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
-        .BYTE $00,$00,$00,$00,$00,$00,$00,$00
-
-
-;---------------------------------------------------------------------------------
-; UpdateBackgroundData
-;---------------------------------------------------------------------------------
-UpdateBackgroundData
-        DEC controlByteForUpdatingBackground
-        BNE b5A10
-
-        LDA #LEN_INITIAL_ARRAY
-        STA controlByteForUpdatingBackground
-
-        LDX #$00
-_Loop   LDA backgroundUpdateControlArray,X
-        BEQ b5A06
-        INX 
-        CPX #LEN_BG_CTRL_ARRAY
-        BNE _Loop
-
-        JMP b5A10
-
-b5A06   LDA #$01
-        STA backgroundUpdateControlArray,X
-        LDA #$00
-        STA indexArrayForBackgroundChars,X
-
-b5A10   LDX #$00
-b5A12   LDA backgroundUpdateControlArray,X
-        BEQ b5A23
-        DEC backgroundUpdateControlArray,X
-        BNE b5A23
-
-        TXA 
-        PHA 
-        JSR UpdateBackgroundDataCharacters
-
-        PLA 
-        TAX 
-b5A23   INX 
-        CPX #LEN_BG_CTRL_ARRAY
-        BNE b5A12
-        RTS 
-
-NUM_HORIZON_CHARACTERS = $09
-;---------------------------------------------------------------------------------
-; UpdateBackgroundDataCharacters
-;---------------------------------------------------------------------------------
-UpdateBackgroundDataCharacters   
-        LDA indexArrayForBackgroundChars,X
-        STA indexIntoDataChars
-
-        CLC 
-        ROR 
-        STA indexToBackgroundControlArray
-
-        INC indexArrayForBackgroundChars,X
-
-        LDA #$FF
-        LDY indexIntoDataChars
-        STA rollingHorizonCharacters,Y
-
-        INY 
-        TYA 
-        STA indexIntoDataChars
-        CMP #(8 * NUM_HORIZON_CHARACTERS)
-        BNE ResetHorizonCharacter
-
-        RTS 
-
-ResetHorizonCharacter   
-        LDY indexToBackgroundControlArray
-        LDA initialBackgroundUpdateControlArray,Y
-        STA backgroundUpdateControlArray,X
-
-        LDX numberOfUpdatesToMakeToChars,Y
-        LDY indexIntoDataChars
-        LDA #$00
-_Loop   INY 
-        STA rollingHorizonCharacters,Y
-        DEX 
-        BNE _Loop
-        RTS 
-
-controlByteForUpdatingBackground   
-        .BYTE $01,$63,$64,$65,$66,$67,$68,$69
-        .BYTE $6A,$6B,$6C,$6D,$6E,$6F
-
-
 ;-------------------------------------------------------
 ; PutRandomByteInAccumulator
 ;-------------------------------------------------------
@@ -1613,23 +1466,10 @@ randomByteAddress   =*+$01
         INC randomByteAddress
         RTS 
 
-
 ;-------------------------------------------------------
-; GenerateEnemyPosition
+; DrawPainted
 ;-------------------------------------------------------
-GenerateEnemyPosition   
-        JSR PutRandomByteInAccumulator
-        AND #$1F
-        STA enemyXPosition
-        JSR PutRandomByteInAccumulator
-        AND #$1F
-        STA enemyYPosition
-        RTS 
-
-;-------------------------------------------------------
-; DrawEnemy
-;-------------------------------------------------------
-DrawEnemy   
+DrawPainted   
         LDA pixelToPaintXPosition
         STA currentCharXPos
         LDA pixelToPaintYPosition
@@ -1638,7 +1478,7 @@ DrawEnemy
         STA currentChar
         JSR WriteCurrentCharToScreen
 
-ReturnFromDrawEnemy
+ReturnFromDrawPainted
         RTS 
 
 * = $2000
