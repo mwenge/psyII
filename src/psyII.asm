@@ -76,6 +76,7 @@ LaunchPsychedelia
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
         CLI 
+        JSR DisplayTitleScreen
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
         JSR CheckKeyboardInput
@@ -104,8 +105,8 @@ CanResetGrid
         AND #$07
         STA currentPatternElement
 
-        JSR InitializeArrays
         JSR ResetGrid
+        JSR InitializeArrays
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
 
@@ -209,7 +210,7 @@ _Loop   LDA #SPACE
         STA SCREEN_RAM + $0100,X
         STA SCREEN_RAM + $0200,X
         STA SCREEN_RAM + $0300,X
-        LDA #WHITE
+        LDA #BLACK
         STA COLOR_RAM + $02F0,X
         DEX 
         BNE _Loop
@@ -311,9 +312,126 @@ ReturnFromWriteCharToScreen
         RTS 
 
 ;--------------------------------------------------------
-; ResetGrid
+; ClearGrid
 ;--------------------------------------------------------
-ResetGrid
+ClearGrid
+        LDX #$00
+_Loop   LDA #SPACE
+        STA SCREEN_RAM,X
+        STA SCREEN_RAM + $0100,X
+        STA SCREEN_RAM + $0200,X
+        STA SCREEN_RAM + $0298,X
+        LDA #BLACK
+        STA COLOR_RAM,X
+        STA COLOR_RAM + $0100,X
+        STA COLOR_RAM + $0200,X
+        STA COLOR_RAM + $0298,X
+        DEX 
+        BNE _Loop
+        RTS 
+
+;--------------------------------------------------------
+; Wait5Seconds
+;--------------------------------------------------------
+Wait5Seconds   
+
+				LDX #4
+Wait1   LDY #60
+Wait2   BIT $D011
+				BPL Wait2
+WaitVb2 BIT $D011
+				BMI WaitVb2
+				DEY
+				BNE Wait2
+				DEX
+				BNE Wait1
+
+				RTS
+
+;                    0123456789012345678901234567890123456789
+titleLineOne  .TEXT "     FILL THE GRID WITH LIGHT!!!        "
+titleLineTwo  .TEXT "      FEWER MOVES = MORE POINTS         "
+helpLineOne   .TEXT "       'S' TO CHANGE SYMMETRY.          "
+helpLineTwo   .TEXT "    'SPACE' TO CHANGE CURSOR SPEED.     "
+HELP_LINE_POSITION = NUM_COLS * 10
+;--------------------------------------------------------
+; DisplayTitleScreen
+;--------------------------------------------------------
+DisplayTitleScreen   
+        LDX #$00
+_Loop   
+        LDA titleLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION,X
+        LDA titleLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        LDA helpLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
+        LDA helpLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+
+        LDA #GRAY1
+        STA COLOR_RAM + HELP_LINE_POSITION,X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+        INX 
+        CPX #NUM_COLS
+        BNE _Loop
+
+        SEI
+TitleCheckFire
+        LDA $DC00    ;CIA1: Data Port Register A
+        AND #JOYSTICK_FIRE
+        BNE TitleCheckFire
+        CLI
+
+        JSR DrawGrid
+
+        RTS 
+
+;                    0123456789012345678901234567890123456789
+levelLineOne  .TEXT "     WE THINK YOU'RE DOING GREAT!       "
+levelLineTwo  .TEXT "                                        "
+;--------------------------------------------------------
+; DisplayLevelInterstitial
+;--------------------------------------------------------
+DisplayLevelInterstitial   
+        LDX #$00
+_Loop   
+        LDA levelLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION,X
+        LDA levelLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        LDA helpLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
+        LDA helpLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+
+        LDA #GRAY1
+        STA COLOR_RAM + HELP_LINE_POSITION,X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+        INX 
+        CPX #NUM_COLS
+        BNE _Loop
+
+				JSR Wait5Seconds
+        RTS 
+
+;--------------------------------------------------------
+; DrawGrid
+;--------------------------------------------------------
+DrawGrid
+
         LDX #$00
 _Loop   LDA #UNPAINTED_GRID
         STA SCREEN_RAM,X
@@ -327,6 +445,21 @@ _Loop   LDA #UNPAINTED_GRID
         STA COLOR_RAM + $0298,X
         DEX 
         BNE _Loop
+        RTS
+
+;--------------------------------------------------------
+; ResetGrid
+;--------------------------------------------------------
+ResetGrid
+				LDA #$01
+        STA processingKeyStroke
+
+        JSR ClearGrid
+        JSR DisplayLevelInterstitial
+        JSR DrawGrid
+
+				LDA #$00
+        STA processingKeyStroke
         RTS 
 
 ;--------------------------------------------------------
@@ -361,11 +494,9 @@ _Loop   LDA #SPACE
         LDA #$08
         STA $D40E    ;Voice 3: Frequency Control - Low-Byte
 
-        JSR ResetGrid
 
         LDA currentColorValue
         STA defaultColorValue
-
 
 SetUpSpritesAndVoiceRegisters
         LDA $D011    ;VIC Control Register 1
@@ -1095,6 +1226,9 @@ LOGO_LINE_POSITION   = NUM_COLS * 23
 LOGO_COL_POSITION    = 0
 
 currentBorderColor   .BYTE BLACK
+;                      0123456789012345678901234567890123456789
+statusLineOne   .TEXT "     SYMM:       SPEED:                 "
+statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
 ;--------------------------------------------------------
 ; InitializeStatusDisplayText
 ;--------------------------------------------------------
@@ -1148,9 +1282,6 @@ patternTxt
         .TEXT 'PULSAR  '
 symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
 
-;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "     SYMM:       SPEED:                 "
-statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
