@@ -1269,6 +1269,17 @@ DecreaseScores
         BEQ FinishedUpdatingScores
 
         ; Deducts points lost
+        ; Check if we're already zero.
+        LDX #$10
+_Loop
+        LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
+        CMP #$30
+        BNE DecreaseScore
+        DEX
+        BNE _Loop
+        JMP UpdatePointsLost
+
+DecreaseScore
         LDX #$10
 DecreaseScoreLoop   
         DEC SCREEN_RAM + SCORE_TXT_OFFSET,X
