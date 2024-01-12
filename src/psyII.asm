@@ -107,6 +107,7 @@ CanResetGrid
         ORA #$01
         STA cursorSpeed
 
+        JSR InitializeArrays
         JSR ResetGrid
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
@@ -839,6 +840,25 @@ currentColorIndexArray
         .BYTE $08,$08,$08,$08,$08,$08,$08,$08
 
 ;--------------------------------------------------------
+; InitializeArrays
+;--------------------------------------------------------
+InitializeArrays   
+        LDX #$00
+_Loop   LDA #$00
+        STA pixelXPositionArray,X
+        STA pixelYPositionArray,X
+        STA symmetrySettingForStep,X
+        STA patternIndexArray,X
+        LDA #$08
+        STA currentColorIndexArray,X
+        LDA #$0C
+        STA smoothingDelayArray,X
+        INX 
+        CPX #$40
+        BNE _Loop
+        RTS 
+
+;--------------------------------------------------------
 ; InitializeColorIndexArray
 ;--------------------------------------------------------
 InitializeColorIndexArray   
@@ -1331,4 +1351,6 @@ ReturnFromDrawEnemy
 * = $2000
 .include "charset.asm"
 .include "patterns.asm"
+
 ; vim: tabstop=2 shiftwidth=2 expandtab smartindent
+
