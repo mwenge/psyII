@@ -203,7 +203,7 @@ InitializeScreenLinePtrArray
         STA screenLinesLoPtr
 
         LDX #$00
-b414D   LDA screenLinesLoPtr
+_Loop   LDA screenLinesLoPtr
         STA screenLinesLoPtrArray,X
         LDA screenLinesHiPtr
         STA screenLinesHiPtrArray,X
@@ -216,7 +216,7 @@ b414D   LDA screenLinesLoPtr
         STA screenLinesHiPtr
         INX 
         CPX #NUM_ROWS + 2
-        BNE b414D
+        BNE _Loop
         RTS 
 
 ;---------------------------------------------------------------------------------
@@ -769,8 +769,6 @@ colorComparisonArray
         .BYTE RED,ORANGE,ORANGE,ORANGE,ORANGE,ORANGE,GREEN,ORANGE
         .BYTE ORANGE
 
-lastColorValue        .BYTE $07
-currentColor          .BYTE RED
 pixelToPaintYPosition .BYTE $0C
 pixelToPaintXPosition .BYTE $0C
 
@@ -861,9 +859,12 @@ HasXAxisSymmetry
 
 currentSymmetrySettingForStep .BYTE $01
 presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
-
-emptyColor                    .BYTE RED
 currentColorValue             .BYTE RED
+
+currentColor                  .BYTE RED
+lastColorValue                .BYTE $07
+currentBorderColor            .BYTE BLACK
+currentBackgroundColor        .BYTE BLACK
 
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
@@ -1033,6 +1034,7 @@ _Loop   LDA #$00
         INX 
         CPX #$40
         BNE _Loop
+b7C51
         RTS 
 
 currentPatternElement .BYTE $00
@@ -1219,8 +1221,6 @@ ChangeBorderColor
         AND #$0F
         STA currentColorValue
 
-        STA emptyColor
-
         LDX #$00
 _Loop   LDA COLOR_RAM + $0000,X
         JSR CheckCurrentBorderColor
@@ -1260,7 +1260,6 @@ STATUS_LINE_POSITION = NUM_COLS * 23
 LOGO_LINE_POSITION   = NUM_COLS * 23
 LOGO_COL_POSITION    = 0
 
-currentBorderColor   .BYTE BLACK
 ;                      0123456789012345678901234567890123456789
 statusLineOne   .TEXT "     SYMM:       SPEED:                 "
 statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
@@ -1454,7 +1453,6 @@ UpdatePointsLost
 FinishedUpdatingScores
         RTS
 
-currentBackgroundColor .BYTE BLACK
 currentSymmetrySetting .BYTE $01,$DD
 
 ;-------------------------------------------------------
