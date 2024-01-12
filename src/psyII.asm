@@ -350,7 +350,7 @@ WaitVb2 BIT $D011
 
 ;                    0123456789012345678901234567890123456789
 titleLineOne  .TEXT "     FILL THE GRID WITH LIGHT!!!        "
-titleLineTwo  .TEXT "      FEWER MOVES = MORE POINTS         "
+titleLineTwo  .TEXT "      FEWER MOVES * MORE POINTS         "
 helpLineOne   .TEXT "       'S' TO CHANGE SYMMETRY.          "
 helpLineTwo   .TEXT "    'SPACE' TO CHANGE CURSOR SPEED.     "
 HELP_LINE_POSITION = NUM_COLS * 10
@@ -394,8 +394,42 @@ TitleCheckFire
         RTS 
 
 ;                    0123456789012345678901234567890123456789
-levelLineOne  .TEXT "     WE THINK YOU'RE DOING GREAT!       "
-levelLineTwo  .TEXT "                                        "
+levelLineOne  .TEXT "YOU ARE                                 "
+levelLineTwo  .TEXT "      ANOTHER LEVEL COMING UP!          "
+encouragement
+;              0123456789012345678901234567890123456789
+        .TEXT 'A VERY NICE PERSON INDEED THANKS'
+        .TEXT 'VALUED BY EVERYONE IN YOUR LIFE!'
+        .TEXT 'DOING V. WELL THANK YOU V. MUCH!'
+        .TEXT 'ONE OF THE CHAPS! ONE OF US!!!  '
+        .TEXT 'NOT A BAD EGG AT ALL FOR A WALLY'
+        .TEXT 'A DECENT SPUD DESPITE EVERYTHING'
+        .TEXT 'A DAB HAND AT THIS I MUST SAY!  '
+        .TEXT 'A LOVING AND ATTENTIVE MOTHER!  '
+        .TEXT 'A VALUABLE MEMBER OF SOCIETY!   '
+        .TEXT 'SPREADING LIGHT ALL AROUND YOU! '
+        .TEXT 'A SOURCE OF LIGHT AND JOY TO ALL'
+        .TEXT 'FILLING UP ON DELIVIOUS POINTS  '
+        .TEXT 'A LOVELY OLD HIPPY AT HEART!    '
+        .TEXT 'SEEN AND LOVED AND RESPECTED!   '
+        .TEXT 'GETTING RATHER GOOD AT THIS!    '
+        .TEXT 'UP TO ALL SORTS OF TRICKS!!!!!  '
+        .TEXT 'PUTTING THE REST OF US TO SHAME!'
+
+tips
+;              0123456789012345678901234567890123456789
+        .TEXT '   CHOOSE YOUR SYMMETRIES CAREFULLY!!   '
+        .TEXT ' YOU CAN MAXIMISE POINTS THAT WAY!      '
+        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
+        .TEXT '     AREAS OVER AND OVER AGAIN!         '
+        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
+        .TEXT '     AREAS OVER AND OVER AGAIN!         '
+        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
+        .TEXT '     AREAS OVER AND OVER AGAIN!         '
+        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
+        .TEXT '     AREAS OVER AND OVER AGAIN!         '
+
+INTERSTIT_LINE_POS = NUM_COLS * 6 
 ;--------------------------------------------------------
 ; DisplayLevelInterstitial
 ;--------------------------------------------------------
@@ -404,25 +438,66 @@ DisplayLevelInterstitial
 _Loop   
         LDA levelLineOne,X
         AND #$3F
-        STA SCREEN_RAM + HELP_LINE_POSITION,X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS,X
+
         LDA levelLineTwo,X
         AND #$3F
-        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+
         LDA helpLineOne,X
         AND #$3F
-        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
+
         LDA helpLineTwo,X
         AND #$3F
-        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
 
         LDA #GRAY1
-        STA COLOR_RAM + HELP_LINE_POSITION,X
-        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
-        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
-        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+        STA COLOR_RAM + INTERSTIT_LINE_POS,X
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*5),X
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
         INX 
         CPX #NUM_COLS
         BNE _Loop
+
+        ; Update the tip
+        LDA currentLevel
+        AND #$07
+        .rept 6
+        ASL
+        .endrept
+        TAY 
+        .rept 16
+        INY
+        .endrept
+
+        LDX #$00
+_Loop2  LDA tips,Y
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        INY 
+        INX 
+        CPX #80
+        BNE _Loop2
+
+        ; Update the encouragement
+        LDA currentLevel
+        AND #$1F
+        .rept 5
+        ASL
+        .endrept
+        TAY 
+
+        LDX #$00
+_Loop3  LDA encouragement,Y
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS + 8,X
+        INY 
+        INX 
+        CPX #32
+        BNE _Loop3
 
 				JSR Wait5Seconds
         RTS 
