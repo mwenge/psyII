@@ -74,11 +74,13 @@ LaunchPsychedelia
         JSR InitializeColorIndexArray
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
+        JSR UpdateLevelText
         CLI 
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
         JSR CheckKeyboardInput
         JSR MaybeResetGrid
+        JSR UpdateScoreText
         JMP PsychedeliaLoop
 
 
@@ -103,14 +105,11 @@ CanResetGrid
         STA currentPatternElement
         AND #$03
         STA currentSymmetrySetting
-        AND #$03
-        ORA #$01
-        STA cursorSpeed
 
         JSR InitializeArrays
         JSR ResetGrid
-        JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
+        JSR UpdateLevelText
 
 ReturnFromResetGrid 
         RTS
@@ -298,6 +297,8 @@ WriteCharToScreen
         STA screenLinesHiPtr
 
         JSR IncrementFillCounter
+        INC pointsEarned
+
         LDA fillCount2
         CMP #3
         BNE ReturnFromWriteCharToScreen
@@ -320,12 +321,12 @@ _Loop   LDA #UNPAINTED_GRID
         STA SCREEN_RAM,X
         STA SCREEN_RAM + $0100,X
         STA SCREEN_RAM + $0200,X
-        STA SCREEN_RAM + $0300,X
+        STA SCREEN_RAM + $0298,X
         LDA currentColorValue
         STA COLOR_RAM,X
         STA COLOR_RAM + $0100,X
         STA COLOR_RAM + $0200,X
-        STA COLOR_RAM + $0300,X
+        STA COLOR_RAM + $0298,X
         DEX 
         BNE _Loop
         RTS 
@@ -881,6 +882,8 @@ MaybeFirePressed
         AND #JOYSTICK_FIRE
         BNE b7C51
 
+        INC pointsLost
+
         LDX currentIndexToBuffers
         LDA currentColorIndexArray,X
         AND #$08
@@ -1144,9 +1147,20 @@ _Loop   LDA logoLineOne,X
 
         RTS
 
+patternTxt
+        .TEXT 'STAR ONE'
+        .TEXT 'TWIST   '
+        .TEXT 'LLAMITA '
+        .TEXT 'STAR TWO'
+        .TEXT 'DELTOIDS'
+        .TEXT 'DIFFUSED'
+        .TEXT 'CROSS   '
+        .TEXT 'PULSAR  '
+symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
+
 ;                      0123456789012345678901234567890123456789
 statusLineOne   .TEXT "     S:          C:   P:                "
-statusLineTwo   .TEXT "     SCORE: 0000000000000000000000000000"
+statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
 ;--------------------------------------------------------
@@ -1190,16 +1204,88 @@ _Loop2  LDA patternTxt,Y
         BNE _Loop2
         RTS 
 
-patternTxt
-        .TEXT 'STAR ONE'
-        .TEXT 'TWIST   '
-        .TEXT 'LLAMITA '
-        .TEXT 'STAR TWO'
-        .TEXT 'DELTOIDS'
-        .TEXT 'DIFFUSED'
-        .TEXT 'CROSS   '
-        .TEXT 'PULSAR  '
-symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
+currentLevel .BYTE $00
+STATUS_LINE_TWO_POSITION = NUM_COLS * 24
+LEVEL_TXT_OFFSET = STATUS_LINE_TWO_POSITION + 12
+;--------------------------------------------------------
+; UpdateLevelText
+;--------------------------------------------------------
+UpdateLevelText
+        LDA #$30
+        STA SCREEN_RAM + LEVEL_TXT_OFFSET
+        STA SCREEN_RAM + LEVEL_TXT_OFFSET+1
+        STA SCREEN_RAM + LEVEL_TXT_OFFSET+2
+
+        ; Update the current level
+        INC currentLevel
+        LDX currentLevel
+LevelLoop   
+        INC SCREEN_RAM + LEVEL_TXT_OFFSET+2
+        LDA SCREEN_RAM + LEVEL_TXT_OFFSET+2
+        CMP #$3A
+        BNE NextDigit
+        LDA #$30
+        STA SCREEN_RAM + LEVEL_TXT_OFFSET+2
+        INC SCREEN_RAM + LEVEL_TXT_OFFSET+1
+        LDA SCREEN_RAM + LEVEL_TXT_OFFSET+1
+        CMP #$3A
+        BNE NextDigit
+        LDA #$30
+        STA SCREEN_RAM + LEVEL_TXT_OFFSET+1
+        INC SCREEN_RAM + LEVEL_TXT_OFFSET
+NextDigit   
+        DEX
+        BNE LevelLoop
+
+        RTS
+
+pointsEarned .BYTE $00
+pointsLost   .BYTE $00
+SCORE_TXT_OFFSET = STATUS_LINE_TWO_POSITION + 23
+;--------------------------------------------------------
+; UpdateScoreText
+;--------------------------------------------------------
+UpdateScoreText
+        LDA pointsEarned
+        BEQ DecreaseScores
+
+        ; Add points earned
+        LDX #$10
+IncreaseScoreLoop   
+        INC SCREEN_RAM + SCORE_TXT_OFFSET,X
+        LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
+        CMP #$3A
+        BNE UpdatePointsEarned
+        LDA #$30
+        STA SCREEN_RAM + SCORE_TXT_OFFSET,X
+        DEX
+        BNE IncreaseScoreLoop
+
+UpdatePointsEarned
+        DEC pointsEarned
+
+DecreaseScores
+        LDA pointsLost
+        BEQ FinishedUpdatingScores
+
+        ; Deducts points lost
+        LDX #$10
+DecreaseScoreLoop   
+        DEC SCREEN_RAM + SCORE_TXT_OFFSET,X
+        LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
+        CMP #$2F
+        BNE UpdatePointsLost
+        LDA #$39
+        STA SCREEN_RAM + SCORE_TXT_OFFSET,X
+        DEX
+        BNE DecreaseScoreLoop
+
+UpdatePointsLost
+        DEC pointsLost
+
+FinishedUpdatingScores
+        RTS
+
 currentBackgroundColor .BYTE BLACK
 currentSymmetrySetting .BYTE $01,$DD
 
