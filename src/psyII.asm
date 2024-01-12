@@ -103,8 +103,6 @@ CanResetGrid
         JSR PutRandomByteInAccumulator
         AND #$07
         STA currentPatternElement
-        AND #$03
-        STA currentSymmetrySetting
 
         JSR InitializeArrays
         JSR ResetGrid
@@ -1002,6 +1000,7 @@ MaybeCKeyPressed
         CMP #KEY_C
         BNE MaybeSpacePressed
 
+UpdateSpeed
         ; C pressed.
         ; Cursor Speed C to activate: Just that. Gives you a slow or fast little
         ; cursor, according to setting.
@@ -1015,24 +1014,15 @@ MaybeCKeyPressed
         STA cursorSpeed
         JMP UpdateStatusLineAndReturn
 
+        ; Not used, we don't let them select the pattern.
 MaybeSpacePressed
         CMP #KEY_SPACE ; Space pressed?
-        BNE MaybeF1Pressed
+        BNE NoOtherKeyPressed
 
-        ; Space pressed. Selects a new pattern element. " There are eight permanent ones,
-        ; and eight you can define for yourself (more on this later!). The latter eight
-        ; are all set up when you load, so you can always choose from 16 shapes."
-        LDA #$01
-        STA processingKeyStroke
-        INC currentPatternElement
-        LDA currentPatternElement
-        AND #$07
-        STA currentPatternElement
-        JMP UpdateStatusLineAndReturn
+        ; Space will also update speed.
+        JMP UpdateSpeed
 
-MaybeF1Pressed   
-        CMP #KEY_F1_F2
-        BEQ CycleBackgroundColor
+NoOtherKeyPressed
         RTS
 
 cursorSpeed         .BYTE $02
@@ -1159,7 +1149,7 @@ patternTxt
 symmetrySettingTxt     .TEXT "NONE Y   X  X-Y QUAD"
 
 ;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "     S:          C:   P:                "
+statusLineOne   .TEXT "     SYMM:       SPEED:                 "
 statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
 ;--------------------------------------------------------
 ; UpdateCurrentSettingsDisplay
@@ -1170,7 +1160,7 @@ UpdateCurrentSettingsDisplay
         LDA cursorSpeed
         CLC 
         ADC #$30
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 19 
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 24 
 
         ; Update Symmetry
         LDA currentSymmetrySetting
@@ -1181,7 +1171,7 @@ UpdateCurrentSettingsDisplay
         LDX #$00
 _Loop   LDA symmetrySettingTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 8,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 11,X
         INY 
         INX 
         CPX #$04
@@ -1197,7 +1187,7 @@ _Loop   LDA symmetrySettingTxt,Y
         LDX #$00
 _Loop2  LDA patternTxt,Y
         AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION + 25,X
+        STA SCREEN_RAM + STATUS_LINE_POSITION + 27,X
         INY 
         INX 
         CPX #$08
