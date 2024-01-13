@@ -3,8 +3,9 @@ NUM_COLS                         = $28
 
 BOTTOM_Y_POSITION                = NUM_ROWS-2
 
-PAINTED_GRID                     = $82
+PAINTED_GRID                     = $84
 UNPAINTED_GRID                   = $83
+GLOWING_GRID                     = $84
 
 BLACK                            = $00
 WHITE                            = $01

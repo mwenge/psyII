@@ -32,6 +32,8 @@ yPosLoPtr                     = $10
 yPosHiPtr                     = $11
 enemyXPosition                = $12
 enemyYPosition                = $13
+screenRAMLoPtr = $23
+screenRAMHiPtr = $24
 
 currentPressedKey             = $C5
 indexIntoDataChars            = $D0
@@ -94,10 +96,15 @@ MaybeStartNewLevel
         BEQ ReturnFromStartNewLevel 
         
 StartNewLevel
+        LDX #$00
+        STX gameActive
+
         LDA #$00
         STA fillCount
         STA fillCount2
         STA shouldStartNewLevel
+        LDA #UNPAINTED_GRID
+        STA valueUnderCursor
 
         JSR CycleBackgroundColor
 
@@ -109,6 +116,9 @@ StartNewLevel
         JSR InitializeArrays
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
+
+        LDX #$01
+        STX gameActive
 
 ReturnFromStartNewLevel 
         RTS
@@ -312,7 +322,7 @@ _Loop   LDA #SPACE
 ;--------------------------------------------------------
 Wait5Seconds   
 
-				LDX #4
+				LDX #2
 Wait1   LDY #60
 Wait2   BIT $D011
 				BPL Wait2
@@ -375,7 +385,7 @@ TitleCheckFire
         CLI
 
         JSR ClearGrid
-        JSR DisplayLevelInterstitial
+        JSR DisplayIntro
         JSR DrawGrid
 
         RTS 
@@ -386,7 +396,7 @@ levelLineTwo  .TEXT "                                        "
 encouragement
 ;              0123456789012345678901234567890123456789
         .TEXT 'A VERY NICE PERSON INDEED THANKS'
-        .TEXT 'GOING TO DO FINE AT THIS I THINK'
+        .TEXT 'GOING TO DO VERY WELL AT THIS!!!'
         .TEXT 'VALUED BY EVERYONE IN YOUR LIFE!'
         .TEXT 'DOING V WELL THANK YOU V MUCH!  '
         .TEXT 'ONE OF THE CHAPS! ONE OF US!!!  '
@@ -407,21 +417,20 @@ encouragement
 
 tips
 ;              0123456789012345678901234567890123456789
-        .TEXT 'CHOOSE THE SYMMETRY FOR THE JOB!'
         .TEXT ' FILL UP THE DARKNESS WITH LIGHT'
-        .TEXT '   SPEED IS NOT OF THE ESSENCE  '
-        .TEXT '       LESS IS ALWAYS MORE      '
+        .TEXT 'KEEP MAKING THE PRETTY PATTERNS!'
+        .TEXT 'CHOOSE THE SYMMETRY FOR THE JOB!'
+        .TEXT '  SPEED IS NOT OF THE ESSENCE!  '
+        .TEXT '      LESS IS ALWAYS MORE!      '
         .TEXT '  MAKE PLEASING LIGHT DISPLAYS  '
-        .TEXT '      WATCH THOSE CORNERS!      '
-        .TEXT '       LESS IS ALWAYS MORE      '
+        .TEXT '     WATCH THOSE CORNERS!!      '
+        .TEXT '      LESS IS ALWAYS MORE!      '
 
 INTERSTIT_LINE_POS = NUM_COLS * 6 
 ;--------------------------------------------------------
 ; DisplayLevelInterstitial
 ;--------------------------------------------------------
 DisplayLevelInterstitial   
-        LDX #$00
-        STX gameActive
 _Loop   
         LDA levelLineOne,X
         AND #$3F
@@ -439,9 +448,11 @@ _Loop
         AND #$3F
         STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
 
-        LDA #GRAY1
+        LDA #YELLOW
         STA COLOR_RAM + INTERSTIT_LINE_POS,X
+        LDA #GREEN
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        LDA #WHITE
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
         INX 
@@ -483,6 +494,48 @@ _Loop3  LDA encouragement,Y
         INX 
         CPX #32
         BNE _Loop3
+
+				JSR Wait5Seconds
+
+
+        RTS 
+
+;                    0123456789012345678901234567890123456789
+introLineOne  .TEXT "      MAY YOU DO GOOD AND NOT EVIL!     "
+introLineTwo  .TEXT "   MAKE SURE YOU HAVEN'T MISSED A BIT!  "
+;--------------------------------------------------------
+; DisplayIntro
+;--------------------------------------------------------
+DisplayIntro   
+        LDX #$00
+        STX gameActive
+_Loop   
+        LDA introLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS,X
+
+        LDA introLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+
+        LDA helpLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
+
+        LDA helpLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
+
+        LDA #YELLOW
+        STA COLOR_RAM + INTERSTIT_LINE_POS,X
+        LDA #GREEN
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        LDA #WHITE
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
+        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
+        INX 
+        CPX #NUM_COLS
+        BNE _Loop
 
 				JSR Wait5Seconds
 
@@ -622,12 +675,11 @@ PaintBackgroundColor
         JSR $FF9F ;$FF9F - scan keyboard                    
         JMP IncrementAndUpdateRaster
 
-cursorXPosition   .BYTE $15
-cursorYPosition   .BYTE $0B
+cursorXPosition     .BYTE $15
+cursorYPosition     .BYTE $0B
 colorValueForCursor .BYTE WHITE
 
-screenRAMLoPtr = $23
-screenRAMHiPtr = $24
+charValueForCursor .BYTE $00
 ;--------------------------------------------------------
 ; WriteCursorValueToColorRAM
 ;--------------------------------------------------------
@@ -637,6 +689,10 @@ WriteCursorValueToColorRAM
 
         LDA screenLinesLoPtrArray,X
         STA screenRAMLoPtr
+        LDA screenLinesHiPtrArray,X
+        STA screenRAMHiPtr
+        LDA charValueForCursor
+        STA (screenRAMLoPtr),Y
 
         LDA screenLinesHiPtrArray,X
         CLC 
@@ -647,6 +703,22 @@ WriteCursorValueToColorRAM
         STA (screenRAMLoPtr),Y
         RTS 
 
+valueUnderCursor .BYTE UNPAINTED_GRID
+;--------------------------------------------------------
+; GetValueUnderCursor
+;--------------------------------------------------------
+GetValueUnderCursor   
+        LDY cursorXPosition
+        LDX cursorYPosition
+
+        LDA screenLinesLoPtrArray,X
+        STA screenRAMLoPtr
+        LDA screenLinesHiPtrArray,X
+        STA screenRAMHiPtr
+        LDA (screenRAMLoPtr),Y
+        STA valueUnderCursor
+
+        RTS 
 gameActive .BYTE $00
 ;--------------------------------------------------------
 ; CheckJoystickAndUpdateCursor
@@ -657,14 +729,19 @@ CheckJoystickAndUpdateCursor
 
         LDA currentColorValue
         STA colorValueForCursor
-
+        LDA valueUnderCursor
+        STA charValueForCursor
         JSR WriteCursorValueToColorRAM
+
         JSR MaybeCheckJoystickInput
 
         LDA #WHITE
         STA colorValueForCursor
-
+        JSR GetValueUnderCursor
+        LDA #PAINTED_GRID
+        STA charValueForCursor
         JSR WriteCursorValueToColorRAM
+
 DontDrawCursor
         RTS 
 
@@ -1277,30 +1354,6 @@ STATUS_LINE_POSITION = NUM_COLS * 23
 LOGO_LINE_POSITION   = NUM_COLS * 23
 LOGO_COL_POSITION    = 0
 
-;                      0123456789012345678901234567890123456789
-statusLineOne   .TEXT "     SYMM:       SPEED:                 "
-statusLineTwo   .TEXT "     LEVEL: 000 SCORE: 00000000000000000"
-;--------------------------------------------------------
-; InitializeStatusDisplayText
-;--------------------------------------------------------
-InitializeStatusDisplayText   
-        LDX #$00
-_Loop   LDA statusLineOne,X
-        AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION,X
-        LDA statusLineTwo,X
-        AND #$3F
-        STA SCREEN_RAM + STATUS_LINE_POSITION+NUM_COLS,X
-        LDA #GRAY1
-        STA COLOR_RAM + STATUS_LINE_POSITION,X
-        LDA #GRAY1
-        STA COLOR_RAM + STATUS_LINE_POSITION+NUM_COLS,X
-        INX 
-        CPX #NUM_COLS
-        BNE _Loop
-        JSR DisplayLogo
-        RTS 
-
 logoLineOne .BYTE $76,$78,$7E,$80
 logoLineTwo .BYTE $77,$79,$7F,$81
 ;--------------------------------------------------------
@@ -1319,8 +1372,53 @@ _Loop   LDA logoLineOne,X
         INX 
         CPX #len(logoLineOne)
         BNE _Loop
-
         RTS
+
+;                      0123456789012345678901234567890123456789
+statusLineOne   .TEXT "     SYMM:       SPEED:                 "
+statusLineTwo   .TEXT "     LEVEL: 000  SCORE:00000000000000000"
+;--------------------------------------------------------
+; InitializeStatusDisplayText
+;--------------------------------------------------------
+InitializeStatusDisplayText   
+        LDX #$00
+_Loop   LDA statusLineOne,X
+        AND #$3F
+        STA SCREEN_RAM + STATUS_LINE_POSITION,X
+        LDA statusLineTwo,X
+        AND #$3F
+        STA SCREEN_RAM + STATUS_LINE_POSITION+NUM_COLS,X
+
+        LDA #WHITE
+        STA COLOR_RAM + STATUS_LINE_POSITION,X
+        LDA #WHITE
+        STA COLOR_RAM + STATUS_LINE_POSITION+NUM_COLS,X
+        INX 
+        CPX #NUM_COLS
+        BNE _Loop
+
+        LDX #$05
+_Loop2
+        LDA #YELLOW
+        STA COLOR_RAM + STATUS_LINE_POSITION,X
+        STA COLOR_RAM + STATUS_LINE_POSITION+12,X
+        LDA #YELLOW
+        STA COLOR_RAM + STATUS_LINE_POSITION+NUM_COLS,X
+        STA COLOR_RAM + STATUS_LINE_POSITION+NUM_COLS+12,X
+        INX 
+        CPX #11
+        BNE _Loop2
+
+        LDX #27
+_Loop3
+        LDA #PURPLE
+        STA COLOR_RAM + STATUS_LINE_POSITION,X
+        INX 
+        CPX #40
+        BNE _Loop3
+
+        JSR DisplayLogo
+        RTS 
 
 patternTxt
         .TEXT 'STAR ONE'
