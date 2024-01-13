@@ -69,10 +69,9 @@ screenLinesHiPtrArray         = $0360
 LaunchPsychedelia
         JSR InitializeScreenLinePtrArray
         JSR ClearScreen
-        JSR SetUpInterrupts
         SEI 
+        JSR SetUpInterrupts
         JSR InitializePsychedelia
-        JSR SetUpBackgroundPainting
         JSR InitializeArrays
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
@@ -127,7 +126,6 @@ ReturnFromStartNewLevel
 ; SetUpInterrupts
 ;---------------------------------------------------------------------------------
 SetUpInterrupts   
-        SEI 
         LDA #$7F
         STA $DC0D    ;CIA1: CIA Interrupt Control Register
         LDA #<TitleScreenInterruptHandler
@@ -143,6 +141,10 @@ SetUpInterrupts
         STA $D01A    ;VIC Interrupt Mask Register (IMR)
         RTS 
 
+psyRasterPositionArray       .BYTE $40,$FF,$FF
+psyRasterJumpTableLoPtrArray .BYTE <PaintBackgroundColor,<PaintBackgroundColor,<PaintBackgroundColor
+psyRasterJumpTableHiPtrArray .BYTE >PaintBackgroundColor,>PaintBackgroundColor,>PaintBackgroundColor
+
 ;---------------------------------------------------------------------------------
 ; UpdateRasterPosition
 ;---------------------------------------------------------------------------------
@@ -150,22 +152,20 @@ UpdateRasterPosition
         LDA $D011    ;VIC Control Register 1
         AND #$7F
         STA $D011    ;VIC Control Register 1
+
         LDX currentRasterArrayIndex
-        LDA rasterPositionArray,X
+        LDA psyRasterPositionArray,X
         CMP #$FF
         BNE b4224
 
         LDA #$00
         STA currentRasterArrayIndex
-        LDA rasterPositionArray
+        LDA psyRasterPositionArray
 b4224   STA $D012    ;Raster Position
         LDA #$01
         STA $D019    ;VIC Interrupt Request Register (IRR)
         RTS 
 
-rasterJumpTableLoPtrArray .BYTE $55,$55,$55
-rasterJumpTableHiPtrArray .BYTE $C0,$C0,$C0
-rasterPositionArray       .BYTE $E0,$FF,$C0,$FF,$A0,$C0,$FF
 
 ;---------------------------------------------------------------------------------
 ; TitleScreenInterruptHandler
@@ -180,12 +180,34 @@ TitleScreenInterruptHandler
         ; After a delay calculated from the IRQ switch to the Zarjas poster
         ; and back again.
 b4237   LDX currentRasterArrayIndex
-        LDA rasterJumpTableLoPtrArray,X
+        LDA psyRasterJumpTableLoPtrArray,X
         STA a08
-        LDA rasterJumpTableHiPtrArray,X
+        LDA psyRasterJumpTableHiPtrArray,X
         STA a09
-        JMP ($0008)
+        JMP (a08)
         ;Returns
+
+;--------------------------------------------------------
+; PaintBackgroundColor
+;--------------------------------------------------------
+PaintBackgroundColor
+        LDA currentBackgroundColor
+        AND #$0F
+        STA $D020    ;Border Color
+        STA $D021    ;Background Color 0
+
+        JSR CheckJoystickAndUpdateCursor
+        JSR $FF9F ;$FF9F - scan keyboard                    
+
+        INC currentRasterArrayIndex
+        JSR UpdateRasterPosition
+        PLA 
+        TAY 
+        PLA 
+        TAX 
+        PLA 
+        RTI 
+
 
 ;---------------------------------------------------------------------------------
 ; ClearScreen
@@ -337,10 +359,10 @@ WaitVb2 BIT $D011
 
 ;                    0123456789012345678901234567890123456789
 titleText     .TEXT "      PSYCHEDELIA II * A LIGHT GAME     "
-titleLineOne  .TEXT "     TILE THE SCREEN AT YOUR LEISURE    "
+titleLineOne  .TEXT "    TILE THE SCREEN AT YOUR LEISURE!   "
 titleLineTwo  .TEXT "    YOU CANNOT DIE * YOU CANNOT LOSE    "
-helpLineOne   .TEXT "       'S' TO CHANGE SYMMETRY.          "
-helpLineTwo   .TEXT "    'SPACE' TO CHANGE CURSOR SPEED.     "
+helpLineOne   .TEXT "        'S' TO CHANGE SYMMETRY..        "
+helpLineTwo   .TEXT "    'SPACE' TO CHANGE CURSOR SPEED..    "
 helpLineThree .TEXT "          PRESS FIRE TO START           "
 HELP_LINE_POSITION = NUM_COLS * 4 
 ;--------------------------------------------------------
@@ -501,7 +523,7 @@ _Loop3  LDA encouragement,Y
         RTS 
 
 ;                    0123456789012345678901234567890123456789
-introLineOne  .TEXT "      MAY YOU DO GOOD AND NOT EVIL!     "
+introLineOne  .TEXT "     MAY YOU DO GOOD AND NOT EVIL!!     "
 introLineTwo  .TEXT "   MAKE SURE YOU HAVEN'T MISSED A BIT!  "
 ;--------------------------------------------------------
 ; DisplayIntro
@@ -628,52 +650,6 @@ SetUpSpritesAndVoiceRegisters
         STA $D412    ;Voice 3: Control Register
 
         RTS 
-
-;--------------------------------------------------------
-; SetUpBackgroundPainting
-;--------------------------------------------------------
-SetUpBackgroundPainting   
-        LDX #$00
-_Loop   LDA psyRasterPositionArray,X
-        STA rasterPositionArray,X
-        LDA psyRasterJumpTableLoPtrArray,X
-        STA rasterJumpTableLoPtrArray,X
-        LDA psyRasterJumpTableHiPtrArray,X
-        STA rasterJumpTableHiPtrArray,X
-        INX 
-        CPX #$03
-        BNE _Loop
-        RTS 
-
-psyRasterPositionArray       .BYTE $C0,$FF,$FF
-psyRasterJumpTableLoPtrArray .BYTE <PaintBackgroundColor,<PaintBackgroundColor,<PaintBackgroundColor
-psyRasterJumpTableHiPtrArray .BYTE >PaintBackgroundColor,>PaintBackgroundColor,>PaintBackgroundColor
-
-;---------------------------------------------------------------------------------
-; IncrementAndUpdateRaster
-;---------------------------------------------------------------------------------
-IncrementAndUpdateRaster
-        INC currentRasterArrayIndex
-        JSR UpdateRasterPosition
-        PLA 
-        TAY 
-        PLA 
-        TAX 
-        PLA 
-        RTI 
-
-;--------------------------------------------------------
-; PaintBackgroundColor
-;--------------------------------------------------------
-PaintBackgroundColor
-        LDA currentBackgroundColor
-        AND #$0F
-        STA $D020    ;Border Color
-        STA $D021    ;Background Color 0
-
-        JSR CheckJoystickAndUpdateCursor
-        JSR $FF9F ;$FF9F - scan keyboard                    
-        JMP IncrementAndUpdateRaster
 
 cursorXPosition     .BYTE $15
 cursorYPosition     .BYTE $0B
