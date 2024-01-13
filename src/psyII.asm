@@ -486,20 +486,30 @@ tips
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
 
-INTERSTIT_LINE_POS = NUM_COLS * 6 
+INTERSTIT_LINE_POS    = NUM_COLS * 6
+LEVEL_COMPLETE_TXT    = (NUM_COLS * 4)
+LEVEL_COMPLETE_OFFSET = LEVEL_COMPLETE_TXT + 17
+;                       0123456789012345678901234567890123456789
+levelProgressTxt .TEXT "           LEVEL 000 COMPLETE!          "
 ;--------------------------------------------------------
 ; DisplayLevelInterstitial
 ;--------------------------------------------------------
 DisplayLevelInterstitial   
 _Loop   
+        LDA levelProgressTxt,X
+        AND #$3F
+        STA SCREEN_RAM + LEVEL_COMPLETE_TXT,X
+
         LDA levelLineOne,X
         AND #$3F
         STA SCREEN_RAM + INTERSTIT_LINE_POS,X
 
         LDA levelLineTwo,X
         AND #$3F
-        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*2),X
 
+        LDA #PURPLE
+        STA COLOR_RAM + LEVEL_COMPLETE_TXT,X
         LDA #YELLOW
         STA COLOR_RAM + INTERSTIT_LINE_POS,X
         LDA #GREEN
@@ -507,6 +517,25 @@ _Loop
         INX 
         CPX #NUM_COLS
         BNE _Loop
+
+        LDX currentLevel
+LevelLoopI   
+        INC SCREEN_RAM + LEVEL_COMPLETE_OFFSET+2
+        LDA SCREEN_RAM + LEVEL_COMPLETE_OFFSET+2
+        CMP #$3A
+        BNE NextDigitI
+        LDA #$30
+        STA SCREEN_RAM + LEVEL_COMPLETE_OFFSET+2
+        INC SCREEN_RAM + LEVEL_COMPLETE_OFFSET+1
+        LDA SCREEN_RAM + LEVEL_COMPLETE_OFFSET+1
+        CMP #$3A
+        BNE NextDigitI
+        LDA #$30
+        STA SCREEN_RAM + LEVEL_COMPLETE_OFFSET+1
+        INC SCREEN_RAM + LEVEL_COMPLETE_TXT
+NextDigitI
+        DEX
+        BNE LevelLoopI
 
         ; Update the tip
 UpdateTipDisplay
