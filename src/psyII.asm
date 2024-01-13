@@ -67,6 +67,9 @@ screenLinesHiPtrArray         = $0360
 ; LaunchPsychedelia
 ;--------------------------------------------------------
 LaunchPsychedelia
+        LDX #$00
+        STX gameActive
+
         JSR InitializeScreenLinePtrArray
         JSR ClearScreen
         SEI 
@@ -77,7 +80,11 @@ LaunchPsychedelia
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
         CLI 
+
         JSR DisplayTitleScreen
+
+        LDA #$01
+        STA gameActive
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
         JSR CheckKeyboardInput
@@ -369,8 +376,6 @@ HELP_LINE_POSITION = NUM_COLS * 4
 ; DisplayTitleScreen
 ;--------------------------------------------------------
 DisplayTitleScreen   
-        LDX #$00
-        STX gameActive
 _Loop   
         LDA titleText,X
         AND #$3F
@@ -585,8 +590,6 @@ introLineTwo  .TEXT "   AND MAKE SURE YOU DON'T MISS A BIT!  "
 ; DisplayIntro
 ;--------------------------------------------------------
 DisplayIntro   
-        LDX #$00
-        STX gameActive
 _Loop   
         LDA introLineOne,X
         AND #$3F
@@ -616,9 +619,6 @@ _Loop
         BNE _Loop
 
 				JSR Wait5Seconds
-
-        LDA #$01
-        STA gameActive
 
         RTS 
 
@@ -751,6 +751,7 @@ GetValueUnderCursor
         STA valueUnderCursor
 
         RTS 
+
 gameActive .BYTE $00
 ;--------------------------------------------------------
 ; CheckJoystickAndUpdateCursor
@@ -1386,8 +1387,8 @@ STATUS_LINE_POSITION = NUM_COLS * 23
 LOGO_LINE_POSITION   = NUM_COLS * 23
 LOGO_COL_POSITION    = 0
 
-logoLineOne .BYTE $76,$78,$7E,$80
-logoLineTwo .BYTE $77,$79,$7F,$81
+logoLineOne     .BYTE $76,$78,$7E,$80
+logoLineTwo     .BYTE $77,$79,$7F,$81
 ;--------------------------------------------------------
 ; DisplayLogo
 ;--------------------------------------------------------
@@ -1397,9 +1398,9 @@ _Loop   LDA logoLineOne,X
         STA SCREEN_RAM + LOGO_LINE_POSITION+LOGO_COL_POSITION,X
         LDA logoLineTwo,X
         STA SCREEN_RAM + LOGO_LINE_POSITION + NUM_COLS+LOGO_COL_POSITION,X
-        LDA #GRAY2
+        LDA #GRAY3
         STA COLOR_RAM + LOGO_LINE_POSITION+LOGO_COL_POSITION,X
-        LDA #GRAY2
+        LDA #GRAY3
         STA COLOR_RAM + LOGO_LINE_POSITION + NUM_COLS+LOGO_COL_POSITION,X
         INX 
         CPX #len(logoLineOne)
