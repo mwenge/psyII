@@ -80,24 +80,24 @@ LaunchPsychedelia
 PsychedeliaLoop   
         JSR MaybeUpdateFromBuffersAndPaint
         JSR CheckKeyboardInput
-        JSR MaybeResetGrid
+        JSR MaybeStartNewLevel
         JSR UpdateScoreText
         JMP PsychedeliaLoop
 
 
-shouldResetGrid .BYTE $00
+shouldStartNewLevel .BYTE $00
 ;---------------------------------------------------------------------------------
-; MaybeResetGrid
+; MaybeStartNewLevel
 ;---------------------------------------------------------------------------------
-MaybeResetGrid
-        LDA shouldResetGrid
-        BEQ ReturnFromResetGrid 
+MaybeStartNewLevel
+        LDA shouldStartNewLevel
+        BEQ ReturnFromStartNewLevel 
         
-CanResetGrid
+StartNewLevel
         LDA #$00
         STA fillCount
         STA fillCount2
-        STA shouldResetGrid
+        STA shouldStartNewLevel
 
         JSR CycleBackgroundColor
 
@@ -110,7 +110,7 @@ CanResetGrid
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
 
-ReturnFromResetGrid 
+ReturnFromStartNewLevel 
         RTS
 
 ;---------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ WriteCharToScreen
         BNE ReturnFromWriteCharToScreen
 
         LDA #$01
-        STA shouldResetGrid
+        STA shouldStartNewLevel
 
 ReturnFromWriteCharToScreen
         RTS 
@@ -326,35 +326,43 @@ WaitVb2 BIT $D011
 				RTS
 
 ;                    0123456789012345678901234567890123456789
-titleLineOne  .TEXT "     FILL THE GRID WITH LIGHT!!!        "
-titleLineTwo  .TEXT "      FEWER MOVES * MORE POINTS         "
+titleText     .TEXT "      PSYCHEDELIA II * A LIGHT GAME     "
+titleLineOne  .TEXT "     TILE THE SCREEN AT YOUR LEISURE    "
+titleLineTwo  .TEXT "    YOU CANNOT DIE * YOU CANNOT LOSE    "
 helpLineOne   .TEXT "       'S' TO CHANGE SYMMETRY.          "
 helpLineTwo   .TEXT "    'SPACE' TO CHANGE CURSOR SPEED.     "
-HELP_LINE_POSITION = NUM_COLS * 10
+helpLineThree .TEXT "          PRESS FIRE TO START           "
+HELP_LINE_POSITION = NUM_COLS * 4 
 ;--------------------------------------------------------
 ; DisplayTitleScreen
 ;--------------------------------------------------------
 DisplayTitleScreen   
         LDX #$00
+        STX gameActive
 _Loop   
-        LDA titleLineOne,X
+        LDA titleText,X
         AND #$3F
         STA SCREEN_RAM + HELP_LINE_POSITION,X
-        LDA titleLineTwo,X
-        AND #$3F
-        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
-        LDA helpLineOne,X
+
+        LDA titleLineOne,X
         AND #$3F
         STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
-        LDA helpLineTwo,X
+
+        LDA titleLineTwo,X
         AND #$3F
         STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
 
-        LDA #GRAY1
+        LDA helpLineThree,X
+        AND #$3F
+        STA SCREEN_RAM + HELP_LINE_POSITION+(NUM_COLS*10),X
+
+        LDA #YELLOW
         STA COLOR_RAM + HELP_LINE_POSITION,X
-        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*2),X
+        LDA #WHITE
         STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*4),X
         STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*6),X
+        LDA #PURPLE
+        STA COLOR_RAM + HELP_LINE_POSITION+(NUM_COLS*10),X
         INX 
         CPX #NUM_COLS
         BNE _Loop
@@ -366,18 +374,21 @@ TitleCheckFire
         BNE TitleCheckFire
         CLI
 
+        JSR ClearGrid
+        JSR DisplayLevelInterstitial
         JSR DrawGrid
 
         RTS 
 
 ;                    0123456789012345678901234567890123456789
 levelLineOne  .TEXT "YOU ARE                                 "
-levelLineTwo  .TEXT "      ANOTHER LEVEL COMING UP!          "
+levelLineTwo  .TEXT "                                        "
 encouragement
 ;              0123456789012345678901234567890123456789
         .TEXT 'A VERY NICE PERSON INDEED THANKS'
+        .TEXT 'GOING TO DO FINE AT THIS I THINK'
         .TEXT 'VALUED BY EVERYONE IN YOUR LIFE!'
-        .TEXT 'DOING V. WELL THANK YOU V. MUCH!'
+        .TEXT 'DOING V WELL THANK YOU V MUCH!  '
         .TEXT 'ONE OF THE CHAPS! ONE OF US!!!  '
         .TEXT 'NOT A BAD EGG AT ALL FOR A WALLY'
         .TEXT 'A DECENT SPUD DESPITE EVERYTHING'
@@ -386,6 +397,7 @@ encouragement
         .TEXT 'A VALUABLE MEMBER OF SOCIETY!   '
         .TEXT 'SPREADING LIGHT ALL AROUND YOU! '
         .TEXT 'A SOURCE OF LIGHT AND JOY TO ALL'
+        .TEXT 'A VERY NICE PERSON INDEED!!!!   '
         .TEXT 'FILLING UP ON DELIVIOUS POINTS  '
         .TEXT 'A LOVELY OLD HIPPY AT HEART!    '
         .TEXT 'SEEN AND LOVED AND RESPECTED!   '
@@ -395,16 +407,13 @@ encouragement
 
 tips
 ;              0123456789012345678901234567890123456789
-        .TEXT '   CHOOSE YOUR SYMMETRIES CAREFULLY!!   '
-        .TEXT ' YOU CAN MAXIMISE POINTS THAT WAY!      '
-        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
-        .TEXT '     AREAS OVER AND OVER AGAIN!         '
-        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
-        .TEXT '     AREAS OVER AND OVER AGAIN!         '
-        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
-        .TEXT '     AREAS OVER AND OVER AGAIN!         '
-        .TEXT '  POINTS GO DOWN IF YOU LIGHT THE SAME  '
-        .TEXT '     AREAS OVER AND OVER AGAIN!         '
+        .TEXT 'CHOOSE THE SYMMETRY FOR THE JOB!'
+        .TEXT ' FILL UP THE DARKNESS WITH LIGHT'
+        .TEXT '   SPEED IS NOT OF THE ESSENCE  '
+        .TEXT '       LESS IS ALWAYS MORE      '
+        .TEXT '  MAKE PLEASING LIGHT DISPLAYS  '
+        .TEXT '      WATCH THOSE CORNERS!      '
+        .TEXT '       LESS IS ALWAYS MORE      '
 
 INTERSTIT_LINE_POS = NUM_COLS * 6 
 ;--------------------------------------------------------
@@ -412,6 +421,7 @@ INTERSTIT_LINE_POS = NUM_COLS * 6
 ;--------------------------------------------------------
 DisplayLevelInterstitial   
         LDX #$00
+        STX gameActive
 _Loop   
         LDA levelLineOne,X
         AND #$3F
@@ -432,7 +442,6 @@ _Loop
         LDA #GRAY1
         STA COLOR_RAM + INTERSTIT_LINE_POS,X
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
-        STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*5),X
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*8),X
         STA COLOR_RAM + INTERSTIT_LINE_POS+(NUM_COLS*10),X
         INX 
@@ -440,26 +449,25 @@ _Loop
         BNE _Loop
 
         ; Update the tip
+UpdateTipDisplay
         LDA currentLevel
         AND #$07
-        .rept 6
+        .rept 5
         ASL
         .endrept
         TAY 
-        .rept 16
-        INY
-        .endrept
 
         LDX #$00
 _Loop2  LDA tips,Y
         AND #$3F
-        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4),X
+        STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4)+5,X
         INY 
         INX 
-        CPX #80
+        CPX #32
         BNE _Loop2
 
         ; Update the encouragement
+UpdateEncouragementDisplay
         LDA currentLevel
         AND #$1F
         .rept 5
@@ -477,6 +485,10 @@ _Loop3  LDA encouragement,Y
         BNE _Loop3
 
 				JSR Wait5Seconds
+
+        LDA #$01
+        STA gameActive
+
         RTS 
 
 ;--------------------------------------------------------
@@ -635,10 +647,14 @@ WriteCursorValueToColorRAM
         STA (screenRAMLoPtr),Y
         RTS 
 
+gameActive .BYTE $00
 ;--------------------------------------------------------
 ; CheckJoystickAndUpdateCursor
 ;--------------------------------------------------------
 CheckJoystickAndUpdateCursor   
+        LDA gameActive
+        BEQ DontDrawCursor 
+
         LDA currentColorValue
         STA colorValueForCursor
 
@@ -649,6 +665,7 @@ CheckJoystickAndUpdateCursor
         STA colorValueForCursor
 
         JSR WriteCursorValueToColorRAM
+DontDrawCursor
         RTS 
 
 ;--------------------------------------------------------
