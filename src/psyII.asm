@@ -399,12 +399,10 @@ _Loop
         CPX #NUM_COLS
         BNE _Loop
 
-        SEI
 TitleCheckFire
         LDA $DC00    ;CIA1: Data Port Register A
         AND #JOYSTICK_FIRE
         BNE TitleCheckFire
-        CLI
 
         JSR ClearGrid
         JSR DisplayIntro
