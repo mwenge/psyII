@@ -1335,21 +1335,8 @@ processingKeyStroke .BYTE $00
 ; CycleBackgroundColor   
 ;--------------------------------------------------------
 CycleBackgroundColor   
-        LDA shiftKey 
-        AND #$01
-        BEQ ChangeBorderColor
-
-ChangeBackgroundColor
-        INC currentBackgroundColor
-        LDA #$01
-        STA processingKeyStroke 
-        RTS 
-
-ChangeBorderColor
         LDA currentColorValue
         STA currentBorderColor
-
-        SEI 
 
         INC currentColorValue
         LDA currentColorValue
@@ -1357,39 +1344,15 @@ ChangeBorderColor
         STA currentColorValue
 
         LDX #$00
-_Loop   LDA COLOR_RAM + $0000,X
-        JSR CheckCurrentBorderColor
+_Loop   
         STA COLOR_RAM + $0000,X
-
-        LDA COLOR_RAM + $0100,X
-        JSR CheckCurrentBorderColor
         STA COLOR_RAM + $0100,X
-
-        LDA COLOR_RAM + $0200,X
-        JSR CheckCurrentBorderColor
         STA COLOR_RAM + $0200,X
-
-        LDA COLOR_RAM + $0300,X
-        JSR CheckCurrentBorderColor
-        STA COLOR_RAM + $0300,X
+        STA COLOR_RAM + $0298,X
         DEX 
         BNE _Loop
 
-        LDA #$01
-        STA processingKeyStroke
-
-        CLI 
 b7D72   RTS 
-
-;--------------------------------------------------------
-; CheckCurrentBorderColor
-;--------------------------------------------------------
-CheckCurrentBorderColor   
-        AND #$0F
-        CMP currentBorderColor
-        BNE b7D72
-        LDA currentColorValue
-        RTS 
 
 STATUS_LINE_POSITION = NUM_COLS * 23
 LOGO_LINE_POSITION   = NUM_COLS * 23
