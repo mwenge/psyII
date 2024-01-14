@@ -23,16 +23,18 @@ currentCharXPos               = $04
 currentCharYPos               = $05
 defaultColorValue             = $06
 currentChar                   = $07
-a08                           = $08
-a09                           = $09
 xPosLoPtr                     = $0D
 xPosHiPtr                     = $0E
 yPosLoPtr                     = $10
 yPosHiPtr                     = $11
 enemyXPosition                = $12
 enemyYPosition                = $13
-screenRAMLoPtr = $23
-screenRAMHiPtr = $24
+tipsLoPtr                     = $14
+tipsHiPtr                     = $15
+encsLoPtr                     = tipsLoPtr
+encsHiPtr                     = tipsHiPtr
+screenRAMLoPtr                = $23
+screenRAMHiPtr                = $24
 
 currentPressedKey             = $C5
 indexIntoDataChars            = $D0
@@ -388,7 +390,7 @@ TitleCheckFire
 ;                    0123456789012345678901234567890123456789
 levelLineOne  .TEXT "YOU ARE                                 "
 levelLineTwo  .TEXT "                                        "
-encouragement
+encs
 ;              0123456789012345678901234567890123456789
         .TEXT "A VERY NICE PERSON INDEED THANKS"
         .TEXT "GOING TO BE VERY GOOD AT THIS!!!"
@@ -398,6 +400,7 @@ encouragement
         .TEXT "ONE OF THE CHAPS! ALSO THE BOYS!"
         .TEXT "NOT A BAD EGG AT ALL FOR A WALLY"
         .TEXT "A DECENT SPUD DESPITE EVERYTHING"
+encs2
         .TEXT "A DAB HAND AT THIS I MUST SAY!!!"
         .TEXT "A LOVING AND ATTENTIVE PERSON!!!"
         .TEXT "A VALUABLE MEMBER OF SOCIETY!!!!"
@@ -406,6 +409,7 @@ encouragement
         .TEXT "A VERY NICE PERSON INDEED I SEE!"
         .TEXT "FILLING UP ON DELICIOUS POINTS!!"
         .TEXT "A LOVELY OLD HIPPY AT HEART!!!!!"
+encs3
         .TEXT "SEEN AND LOVED PLUS QUITE PRETTY"
         .TEXT "GETTING RATHER GOOD AT THIS!!!!!"
         .TEXT "UP TO ALL SORTS OF NEW TRICKS!!!"
@@ -414,6 +418,7 @@ encouragement
         .TEXT "STILL PLAYING THAT'S AMAZING!!!!"
         .TEXT "A VERY NICE PERSON INDEED I SEE!"
         .TEXT "A PRAGMATIST NOT AN IDEALIST!!!!"
+encs4
         .TEXT "THE SORT THAT DOESN'T GIVE UP!!!"
         .TEXT "CREATING SOME PLEASANT MEMORIES!"
         .TEXT "NOT SUCH A SILLY BILLY AFTER ALL"
@@ -427,14 +432,15 @@ encouragement
 
 tips
 ;              0123456789012345678901234567890123456789
-        .TEXT " FILL UP THE DARKNESS WITH LIGHT"
         .TEXT "KEEP MAKING THE PRETTY PATTERNS!"
+        .TEXT " FILL UP THE DARKNESS WITH LIGHT"
         .TEXT "CHOOSE THE APT SYMM FOR THE JOB!"
-        .TEXT "CAN'T SEE THE CURSOR* TWIDDLE!!!"
+        .TEXT "TWIDDLE TO SEE THE CURSOR!!!!!!!"
         .TEXT "  SPEED IS NOT OF THE ESSENCE!  "
         .TEXT "      LESS IS ALWAYS MORE!      "
         .TEXT " MAKE PLEASANT LIGHT DISPLAYS!! "
         .TEXT "     WATCH THOSE CORNERS!!      "
+tips2
         .TEXT "      HORSES FOR COURSES!       "
         .TEXT "QUAD IS GOOD FOR THE LOOSE BITS!"
         .TEXT "SWITCH ME OFF IF I STOP WORKING!"
@@ -443,6 +449,7 @@ tips
         .TEXT "CHOOSE THE APT SYMM FOR THE JOB!"
         .TEXT "TRIED GOING FASTER? TIP* DON'T!!"
         .TEXT "   THE PATTERNS CHOOSE YOU!!    "
+tips3
         .TEXT " MAKE PLEASANT LIGHT DISPLAYS!! "
         .TEXT "THERE ISN'T MUCH MORE TO THIS!!!"
         .TEXT "IT JUST KEEPS GOING ON LIKE THIS"
@@ -451,6 +458,7 @@ tips
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
+tips4
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
@@ -459,7 +467,11 @@ tips
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
         .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
-        .TEXT "COMPUBOT SAYS: NO MORE ADVICE!!!"
+
+tipsArrayLoPtr .BYTE <tips, <tips2,<tips3,<tips4
+tipsArrayHiPtr .BYTE >tips, >tips2,>tips3,>tips4
+encsArrayLoPtr .BYTE <encs, <encs2,<encs3,<encs4
+encsArrayHiPtr .BYTE >encs, >encs2,>encs3,>encs4
 
 INTERSTIT_LINE_POS    = NUM_COLS * 6
 LEVEL_COMPLETE_TXT    = (NUM_COLS * 4)
@@ -493,6 +505,8 @@ _Loop
         CPX #NUM_COLS
         BNE _Loop
 
+
+        ; Display the level number
         LDX currentLevel
 LevelLoopI   
         INC SCREEN_RAM + LEVEL_COMPLETE_OFFSET+2
@@ -514,15 +528,15 @@ NextDigitI
 
         ; Update the tip
 UpdateTipDisplay
-        LDA currentLevel
-        AND #$07
-        .rept 5
-        ASL
-        .endrept
-        TAY 
+        JSR AdjustLevelValues
+
+        LDA tipsArrayLoPtr,X
+        STA tipsLoPtr
+        LDA tipsArrayHiPtr,X
+        STA tipsHiPtr
 
         LDX #$00
-_Loop2  LDA tips,Y
+_Loop2  LDA (tipsLoPtr),Y
         AND #$3F
         STA SCREEN_RAM + INTERSTIT_LINE_POS+(NUM_COLS*4)+5,X
         INY 
@@ -532,15 +546,15 @@ _Loop2  LDA tips,Y
 
         ; Update the encouragement
 UpdateEncouragementDisplay
-        LDA currentLevel
-        AND #$1F
-        .rept 5
-        ASL
-        .endrept
-        TAY 
+        JSR AdjustLevelValues
+
+        LDA encsArrayLoPtr,X
+        STA encsLoPtr
+        LDA encsArrayHiPtr,X
+        STA encsHiPtr
 
         LDX #$00
-_Loop3  LDA encouragement,Y
+_Loop3  LDA (encsLoPtr),Y
         AND #$3F
         STA SCREEN_RAM + INTERSTIT_LINE_POS + 8,X
         INY 
@@ -550,9 +564,29 @@ _Loop3  LDA encouragement,Y
 
 				JSR Wait5Seconds
 
-
         RTS 
 
+;--------------------------------------------------------
+; AdjustLevelValues
+;--------------------------------------------------------
+AdjustLevelValues   
+        LDA currentLevel
+        SEC
+        SBC #1
+        AND #$07
+        .rept 5
+        ASL
+        .endrept
+        TAY
+
+        LDA currentLevel
+        SEC
+        SBC #1
+        .rept 3
+        LSR
+        .endrept
+        TAX
+        RTS
 ;                    0123456789012345678901234567890123456789
 introLineOne  .TEXT "     MAY YOU DO GOOD AND NOT EVIL!!     "
 introLineTwo  .TEXT "   AND MAKE SURE YOU DON'T MISS A BIT!  "  
