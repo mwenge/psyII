@@ -14,7 +14,7 @@ the screen with glowing patterns.
 
 [<img src="https://img.shields.io/badge/Latest%20Release-Play%20Online-purple.svg">](https://mwenge.github.io/psyII/bin)
 
-User the arrow keys and `Ctrl` for 'Fire'.
+User the arrow keys to move around and `Ctrl` for 'Fire'.
 
 ## Build Requirements
 * [64tass][64tass], tested with v1.54, r1900
