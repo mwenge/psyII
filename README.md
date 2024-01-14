@@ -27,10 +27,10 @@ $ make
 ```
 The compiled game is written to the `bin` folder. 
 
-To just compile the game and get a binary (`psyII.prg`) do:
+To just compile the game and get a binary (`psyii.prg`) do:
 
 ```sh
-$ make psyII.prg
+$ make psyii.prg
 ```
 [64tass]: http://tass64.sourceforge.net/
 [vice]: http://vice-emu.sourceforge.net/
