@@ -74,13 +74,13 @@ LaunchPsychedelia
         JSR InitializeScreenLinePtrArray
         JSR ClearScreen
         SEI 
-        JSR SetUpInterrupts
         JSR InitializePsychedelia
+        JSR SetUpInterrupts
+        CLI 
         JSR InitializeArrays
         JSR InitializeStatusDisplayText
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
-        CLI 
 
         JSR DisplayTitleScreen
 
