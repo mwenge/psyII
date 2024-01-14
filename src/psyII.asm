@@ -25,7 +25,6 @@ defaultColorValue             = $06
 currentChar                   = $07
 a08                           = $08
 a09                           = $09
-currentRasterArrayIndex       = $0A
 xPosLoPtr                     = $0D
 xPosHiPtr                     = $0E
 yPosLoPtr                     = $10
@@ -67,8 +66,8 @@ screenLinesHiPtrArray         = $0360
 ; LaunchPsychedelia
 ;--------------------------------------------------------
 LaunchPsychedelia
-        LDX #$00
-        STX gameActive
+        LDA #$00
+        STA gameActive
 
         JSR InitializeScreenLinePtrArray
         JSR ClearScreen
@@ -102,8 +101,8 @@ MaybeStartNewLevel
         BEQ ReturnFromStartNewLevel 
         
 StartNewLevel
-        LDX #$00
-        STX gameActive
+        LDA #$00
+        STA gameActive
 
         LDA #$00
         STA fillCount
@@ -123,8 +122,8 @@ StartNewLevel
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
 
-        LDX #$01
-        STX gameActive
+        LDA #$01
+        STA gameActive
 
 ReturnFromStartNewLevel 
         RTS
@@ -140,17 +139,11 @@ SetUpInterrupts
         LDA #>TitleScreenInterruptHandler
         STA $0315    ;IRQ
 
-        LDA #$00
-        STA currentRasterArrayIndex
         JSR UpdateRasterPosition
 
         LDA #$01
         STA $D01A    ;VIC Interrupt Mask Register (IMR)
         RTS 
-
-psyRasterPositionArray       .BYTE $40,$FF,$FF
-psyRasterJumpTableLoPtrArray .BYTE <PaintBackgroundColor,<PaintBackgroundColor,<PaintBackgroundColor
-psyRasterJumpTableHiPtrArray .BYTE >PaintBackgroundColor,>PaintBackgroundColor,>PaintBackgroundColor
 
 ;---------------------------------------------------------------------------------
 ; UpdateRasterPosition
@@ -160,19 +153,14 @@ UpdateRasterPosition
         AND #$7F
         STA $D011    ;VIC Control Register 1
 
-        LDX currentRasterArrayIndex
-        LDA psyRasterPositionArray,X
-        CMP #$FF
-        BNE b4224
+        ; Set the position of the next interrupt
+        LDA #$40
+        STA $D012    ;Raster Position
 
-        LDA #$00
-        STA currentRasterArrayIndex
-        LDA psyRasterPositionArray
-b4224   STA $D012    ;Raster Position
+        ; Acknowledge the interrupt
         LDA #$01
         STA $D019    ;VIC Interrupt Request Register (IRR)
         RTS 
-
 
 ;---------------------------------------------------------------------------------
 ; TitleScreenInterruptHandler
@@ -180,41 +168,23 @@ b4224   STA $D012    ;Raster Position
 TitleScreenInterruptHandler
         LDA $D019    ;VIC Interrupt Request Register (IRR)
         AND #$01
-        BNE b4237
+        BNE RasterPositionMatchesRequestedInterrupt
         JMP $EA31
         ; Returns
 
-        ; After a delay calculated from the IRQ switch to the Zarjas poster
-        ; and back again.
-b4237   LDX currentRasterArrayIndex
-        LDA psyRasterJumpTableLoPtrArray,X
-        STA a08
-        LDA psyRasterJumpTableHiPtrArray,X
-        STA a09
-        JMP (a08)
-        ;Returns
-
-;--------------------------------------------------------
-; PaintBackgroundColor
-;--------------------------------------------------------
-PaintBackgroundColor
-        LDA currentBackgroundColor
-        AND #$0F
-        STA $D020    ;Border Color
-        STA $D021    ;Background Color 0
+RasterPositionMatchesRequestedInterrupt   
 
         JSR CheckJoystickAndUpdateCursor
         JSR $FF9F ;$FF9F - scan keyboard                    
 
-        INC currentRasterArrayIndex
         JSR UpdateRasterPosition
+
         PLA 
         TAY 
         PLA 
         TAX 
         PLA 
         RTI 
-
 
 ;---------------------------------------------------------------------------------
 ; ClearScreen
