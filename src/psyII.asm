@@ -48,20 +48,20 @@ screenLinesHiPtrArray         = $0360
 
 * = $0801
 ;-----------------------------------------------------------------------------------
-; Start program at InitializeProgram (SYS 2064)
+; Start program at LaunchPsychedelia (SYS 2064)
 ; SYS 2064 ($0810)
 ;
 ; This is where execution starts.
 ; It is a short BASIC program that executes whatever is at address
-; $0810 (2064 in decimal). In this case, that's InitializeProgram.
+; $0810 (2064 in decimal). In this case, that's LaunchPsychedelia.
 ;-----------------------------------------------------------------------------------
         .BYTE $0B,$08          ; Points to EndOfProgram address below
         .BYTE $C1,$07          ; Arbitrary Line Number, in this case: 1985
         .BYTE $9E              ; SYS
-        .BYTE $32,$30,$36,$34  ; 2064 ($810), which is InitializeProgram below.
+        .BYTE $32,$30,$36,$34  ; 2064 ($810), which is LaunchPsychedelia below.
         .BYTE $00              ; Null byte to terminate the line above.
         .BYTE $00,$00          ; EndOfProgram  (all zeroes)
-        .BYTE $F9,$02,$F9      ; Filler bytes so that InitializeProgram is
+        .BYTE $F9,$02,$F9      ; Filler bytes so that LaunchPsychedelia is
                                ; located at $0810
 
 ;--------------------------------------------------------
