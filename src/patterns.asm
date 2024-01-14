@@ -65,7 +65,7 @@ pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYP
                          .BYTE >trickyPattern6YPosArray
 
 patternTxt
-        .TEXT 'STAR ONE'
+        .TEXT 'BATALYX '
         .TEXT 'TWIST   '
         .TEXT 'LLAMITA '
         .TEXT 'TRICKY  '
