@@ -116,7 +116,7 @@ StartNewLevel
         JSR CycleBackgroundColor
 
         JSR PutRandomByteInAccumulator
-        AND #$07
+        AND #$0F
         STA currentPatternElement
 
         JSR ResetGrid
@@ -1015,11 +1015,18 @@ currentPatternIndex           .BYTE $13
 pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXPosArray
                          .BYTE <starTwoXPosArray,<deltoidXPosArray,<diffusedXPosArray
                          .BYTE <multicrossXPosArray,<pulsarXPosArray
-
+                         .BYTE <customPattern0XPosArray,<customPattern1XPosArray
+                         .BYTE <customPattern2XPosArray,<customPattern3XPosArray
+                         .BYTE <customPattern4XPosArray,<customPattern5XPosArray
+                         .BYTE <customPattern6XPosArray,<customPattern7XPosArray
 
 pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXPosArray
                          .BYTE >starTwoXPosArray,>deltoidXPosArray,>diffusedXPosArray
                          .BYTE >multicrossXPosArray,>pulsarXPosArray
+                         .BYTE >customPattern0XPosArray,>customPattern1XPosArray
+                         .BYTE >customPattern2XPosArray,>customPattern3XPosArray
+                         .BYTE >customPattern4XPosArray,>customPattern5XPosArray
+                         .BYTE >customPattern6XPosArray,>customPattern7XPosArray
 
 ; A pair of arrays together consituting a list of pointers
 ; to positions in memory containing Y position data.
@@ -1027,10 +1034,17 @@ pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXP
 pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYPosArray
                          .BYTE <starTwoYPosArray,<deltoidYPosArray,<diffusedYPosArray
                          .BYTE <multicrossYPosArray,<pulsarYPosArray
-
+                         .BYTE <customPattern0YPosArray,<customPattern1YPosArray
+                         .BYTE <customPattern2YPosArray,<customPattern3YPosArray
+                         .BYTE <customPattern4YPosArray,<customPattern5YPosArray
+                         .BYTE <customPattern6YPosArray,<customPattern7YPosArray
 pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYPosArray
                          .BYTE >starTwoYPosArray,>deltoidYPosArray,>diffusedYPosArray
                          .BYTE >multicrossYPosArray,>pulsarYPosArray
+                         .BYTE >customPattern0YPosArray,>customPattern1YPosArray
+                         .BYTE >customPattern2YPosArray,>customPattern3YPosArray
+                         .BYTE >customPattern4YPosArray,>customPattern5YPosArray
+                         .BYTE >customPattern6YPosArray,>customPattern7YPosArray
 
 ;--------------------------------------------------------
 ; PaintStructureAtCurrentPosition
@@ -1438,6 +1452,14 @@ patternTxt
         .TEXT 'DIFFUSED'
         .TEXT 'CROSS   '
         .TEXT 'PULSAR  '
+        .TEXT 'CND     '
+        .TEXT 'CND2    '
+        .TEXT 'TREE    '
+        .TEXT 'CAMELY  '
+        .TEXT 'BIG STAR'
+        .TEXT 'JEFFIE  '
+        .TEXT 'THING   '
+        .TEXT 'SPREADY '
 symmetrySettingTxt
         .TEXT "NONE Y   X  X-Y QUAD"
 
