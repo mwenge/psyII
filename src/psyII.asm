@@ -123,6 +123,10 @@ StartNewLevel
         JSR InitializeArrays
         JSR UpdateCurrentSettingsDisplay
         JSR UpdateLevelText
+        LDA #$15
+        STA cursorXPosition
+        LDA #$0B
+        STA cursorYPosition
 
         LDA #$01
         STA gameActive
