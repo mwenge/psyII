@@ -1,4 +1,95 @@
 *=$4000
+; A pair of arrays together consituting a list of pointers
+; to positions in memory containing X position data.
+; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
+pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXPosArray
+                         .BYTE <trickyPattern0XPosArray
+                         .BYTE <starTwoXPosArray,<deltoidXPosArray,<diffusedXPosArray
+                         .BYTE <trickyPattern1XPosArray
+                         .BYTE <multicrossXPosArray,<pulsarXPosArray
+                         .BYTE <trickyPattern2XPosArray
+                         .BYTE <customPattern0XPosArray,<customPattern1XPosArray
+                         .BYTE <trickyPattern3XPosArray
+                         .BYTE <customPattern2XPosArray,<customPattern3XPosArray
+                         .BYTE <trickyPattern4XPosArray
+                         .BYTE <customPattern4XPosArray,<customPattern7XPosArray
+                         .BYTE <trickyPattern5XPosArray
+                         .BYTE <customPattern6XPosArray,<customPattern5XPosArray
+                         .BYTE <trickyPattern6XPosArray
+
+pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXPosArray
+                         .BYTE >trickyPattern0XPosArray
+                         .BYTE >starTwoXPosArray,>deltoidXPosArray,>diffusedXPosArray
+                         .BYTE >trickyPattern1XPosArray
+                         .BYTE >multicrossXPosArray,>pulsarXPosArray
+                         .BYTE >trickyPattern2XPosArray
+                         .BYTE >customPattern0XPosArray,>customPattern1XPosArray
+                         .BYTE >trickyPattern3XPosArray
+                         .BYTE >customPattern2XPosArray,>customPattern3XPosArray
+                         .BYTE >trickyPattern4XPosArray
+                         .BYTE >customPattern4XPosArray,>customPattern7XPosArray
+                         .BYTE >trickyPattern5XPosArray
+                         .BYTE >customPattern6XPosArray,>customPattern5XPosArray
+                         .BYTE >trickyPattern6XPosArray
+
+; A pair of arrays together consituting a list of pointers
+; to positions in memory containing Y position data.
+; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
+pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYPosArray
+                         .BYTE <trickyPattern0YPosArray
+                         .BYTE <starTwoYPosArray,<deltoidYPosArray,<diffusedYPosArray
+                         .BYTE <trickyPattern1YPosArray
+                         .BYTE <multicrossYPosArray,<pulsarYPosArray
+                         .BYTE <trickyPattern2YPosArray
+                         .BYTE <customPattern0YPosArray,<customPattern1YPosArray
+                         .BYTE <trickyPattern3YPosArray
+                         .BYTE <customPattern2YPosArray,<customPattern3YPosArray
+                         .BYTE <trickyPattern4YPosArray
+                         .BYTE <customPattern4YPosArray,<customPattern7YPosArray
+                         .BYTE <trickyPattern5YPosArray
+                         .BYTE <customPattern6YPosArray,<customPattern5YPosArray
+                         .BYTE <trickyPattern6YPosArray
+pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYPosArray
+                         .BYTE >trickyPattern0YPosArray
+                         .BYTE >starTwoYPosArray,>deltoidYPosArray,>diffusedYPosArray
+                         .BYTE >trickyPattern1YPosArray
+                         .BYTE >multicrossYPosArray,>pulsarYPosArray
+                         .BYTE >trickyPattern2YPosArray
+                         .BYTE >customPattern0YPosArray,>customPattern1YPosArray
+                         .BYTE >trickyPattern3YPosArray
+                         .BYTE >customPattern2YPosArray,>customPattern3YPosArray
+                         .BYTE >trickyPattern4YPosArray
+                         .BYTE >customPattern4YPosArray,>customPattern7YPosArray
+                         .BYTE >trickyPattern5YPosArray
+                         .BYTE >customPattern6YPosArray,>customPattern5YPosArray
+                         .BYTE >trickyPattern6YPosArray
+
+patternTxt
+        .TEXT 'STAR ONE'
+        .TEXT 'TWIST   '
+        .TEXT 'LLAMITA '
+        .TEXT 'TRICKY  '
+        .TEXT 'STAR TWO'
+        .TEXT 'DELTOIDS'
+        .TEXT 'DIFFUSED'
+        .TEXT 'TRICKY  '
+        .TEXT 'CROSS   '
+        .TEXT 'PULSAR  '
+        .TEXT 'TRICKY  '
+        .TEXT 'CND     '
+        .TEXT 'CND2    '
+        .TEXT 'TRICKY  '
+        .TEXT 'TREE    '
+        .TEXT 'CAMELY  '
+        .TEXT 'TRICKY  '
+        .TEXT 'BIG STAR'
+        .TEXT 'SPREADY '
+        .TEXT 'TRICKY  '
+        .TEXT 'THING   '
+        .TEXT 'JEFFIE  '
+        .TEXT 'TRICKY  '
+
+; The pattern array data.
 patternXPosArray             
         .BYTE $FF,$01,$55    ; 6              
         .BYTE $FE,$02,$55    ;            5   
@@ -439,3 +530,121 @@ customPattern7YPosArray
         .BYTE $10,$55
         .BYTE $08,$55
 
+; Tricky patterns
+trickyPattern0XPosArray
+        .BYTE $11,$55
+        .BYTE $09,$55
+        .BYTE $06,$55
+        .BYTE $09,$55
+        .BYTE $EC,$55
+        .BYTE $ED,$55
+        .BYTE $0E,$55
+trickyPattern0YPosArray
+        .BYTE $EF,$55
+        .BYTE $F2,$55
+        .BYTE $EE,$55
+        .BYTE $ED,$55
+        .BYTE $F2,$55
+        .BYTE $FE,$55
+        .BYTE $0D,$55
+
+trickyPattern1XPosArray
+        .BYTE $F6,$55
+        .BYTE $F1,$55
+        .BYTE $13,$55
+        .BYTE $FC,$55
+        .BYTE $FA,$55
+        .BYTE $09,$55
+        .BYTE $11,$55
+trickyPattern1YPosArray
+        .BYTE $0A,$55
+        .BYTE $F5,$55
+        .BYTE $FD,$55
+        .BYTE $04,$55
+        .BYTE $06,$55
+        .BYTE $01,$55
+        .BYTE $FE,$55
+
+trickyPattern2XPosArray
+        .BYTE $F8,$55
+        .BYTE $F6,$55
+        .BYTE $F3,$55
+        .BYTE $FD,$55
+        .BYTE $07,$55
+        .BYTE $EC,$55
+        .BYTE $FA,$55
+trickyPattern2YPosArray
+        .BYTE $10,$55
+        .BYTE $0A,$55
+        .BYTE $06,$55
+        .BYTE $FB,$55
+        .BYTE $EE,$55
+        .BYTE $ED,$55
+        .BYTE $FB,$55
+
+trickyPattern3XPosArray
+        .BYTE $02,$55
+        .BYTE $ED,$55
+        .BYTE $05,$55
+        .BYTE $02,$55
+        .BYTE $F2,$55
+        .BYTE $F5,$55
+        .BYTE $0B,$55
+trickyPattern3YPosArray
+        .BYTE $F0,$55
+        .BYTE $08,$55
+        .BYTE $13,$55
+        .BYTE $F3,$55
+        .BYTE $F6,$55
+        .BYTE $12,$55
+        .BYTE $F1,$55
+trickyPattern4XPosArray
+        .BYTE $F5,$55
+        .BYTE $12,$55
+        .BYTE $13,$55
+        .BYTE $0E,$55
+        .BYTE $08,$55
+        .BYTE $FB,$55
+        .BYTE $F1,$55
+trickyPattern4YPosArray
+        .BYTE $11,$55
+        .BYTE $FA,$55
+        .BYTE $09,$55
+        .BYTE $F3,$55
+        .BYTE $EC,$55
+        .BYTE $F0,$55
+        .BYTE $12,$55
+trickyPattern5XPosArray
+        .BYTE $F7,$55
+        .BYTE $EB,$55
+        .BYTE $EF,$55
+        .BYTE $F6,$55
+        .BYTE $EF,$55
+        .BYTE $09,$55
+        .BYTE $FA,$55
+trickyPattern5YPosArray
+        .BYTE $F7,$55
+        .BYTE $03,$55
+        .BYTE $09,$55
+        .BYTE $F2,$55
+        .BYTE $F7,$55
+        .BYTE $03,$55
+        .BYTE $02,$55
+trickyPattern6XPosArray
+        .BYTE $02,$55
+        .BYTE $F8,$55
+        .BYTE $07,$55
+        .BYTE $F6,$55
+        .BYTE $08,$55
+        .BYTE $ED,$55
+        .BYTE $04,$55
+trickyPattern6YPosArray
+        .BYTE $F5,$55
+        .BYTE $EF,$55
+        .BYTE $F5,$55
+        .BYTE $0F,$55
+        .BYTE $02,$55
+        .BYTE $0D,$55
+        .BYTE $EC,$55
+
+; vim: tabstop=2 shiftwidth=2 expandtab smartindent

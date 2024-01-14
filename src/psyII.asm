@@ -115,8 +115,9 @@ StartNewLevel
 
         JSR CycleBackgroundColor
 
-        JSR PutRandomByteInAccumulator
-        AND #$0F
+        INC currentPatternElement
+        LDA currentPatternElement
+        AND #$1F
         STA currentPatternElement
 
         JSR ResetGrid
@@ -1009,43 +1010,6 @@ currentBackgroundColor        .BYTE BLACK
 currentLineInPattern          .BYTE $07
 currentPatternIndex           .BYTE $13
 
-; A pair of arrays together consituting a list of pointers
-; to positions in memory containing X position data.
-; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
-pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXPosArray
-                         .BYTE <starTwoXPosArray,<deltoidXPosArray,<diffusedXPosArray
-                         .BYTE <multicrossXPosArray,<pulsarXPosArray
-                         .BYTE <customPattern0XPosArray,<customPattern1XPosArray
-                         .BYTE <customPattern2XPosArray,<customPattern3XPosArray
-                         .BYTE <customPattern4XPosArray,<customPattern5XPosArray
-                         .BYTE <customPattern6XPosArray,<customPattern7XPosArray
-
-pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXPosArray
-                         .BYTE >starTwoXPosArray,>deltoidXPosArray,>diffusedXPosArray
-                         .BYTE >multicrossXPosArray,>pulsarXPosArray
-                         .BYTE >customPattern0XPosArray,>customPattern1XPosArray
-                         .BYTE >customPattern2XPosArray,>customPattern3XPosArray
-                         .BYTE >customPattern4XPosArray,>customPattern5XPosArray
-                         .BYTE >customPattern6XPosArray,>customPattern7XPosArray
-
-; A pair of arrays together consituting a list of pointers
-; to positions in memory containing Y position data.
-; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
-pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYPosArray
-                         .BYTE <starTwoYPosArray,<deltoidYPosArray,<diffusedYPosArray
-                         .BYTE <multicrossYPosArray,<pulsarYPosArray
-                         .BYTE <customPattern0YPosArray,<customPattern1YPosArray
-                         .BYTE <customPattern2YPosArray,<customPattern3YPosArray
-                         .BYTE <customPattern4YPosArray,<customPattern5YPosArray
-                         .BYTE <customPattern6YPosArray,<customPattern7YPosArray
-pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYPosArray
-                         .BYTE >starTwoYPosArray,>deltoidYPosArray,>diffusedYPosArray
-                         .BYTE >multicrossYPosArray,>pulsarYPosArray
-                         .BYTE >customPattern0YPosArray,>customPattern1YPosArray
-                         .BYTE >customPattern2YPosArray,>customPattern3YPosArray
-                         .BYTE >customPattern4YPosArray,>customPattern5YPosArray
-                         .BYTE >customPattern6YPosArray,>customPattern7YPosArray
-
 ;--------------------------------------------------------
 ; PaintStructureAtCurrentPosition
 ;--------------------------------------------------------
@@ -1443,23 +1407,6 @@ _Loop3
         JSR DisplayLogo
         RTS 
 
-patternTxt
-        .TEXT 'STAR ONE'
-        .TEXT 'TWIST   '
-        .TEXT 'LLAMITA '
-        .TEXT 'STAR TWO'
-        .TEXT 'DELTOIDS'
-        .TEXT 'DIFFUSED'
-        .TEXT 'CROSS   '
-        .TEXT 'PULSAR  '
-        .TEXT 'CND     '
-        .TEXT 'CND2    '
-        .TEXT 'TREE    '
-        .TEXT 'CAMELY  '
-        .TEXT 'BIG STAR'
-        .TEXT 'JEFFIE  '
-        .TEXT 'THING   '
-        .TEXT 'SPREADY '
 symmetrySettingTxt
         .TEXT "NONE Y   X  X-Y QUAD"
 
