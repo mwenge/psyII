@@ -2,9 +2,9 @@
 ; A pair of arrays together consituting a list of pointers
 ; to positions in memory containing X position data.
 ; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
-pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXPosArray
+pixelXPositionLoPtrArray .BYTE <patternXPosArray,<diffusedXPosArray,<laLlamitaXPosArray
                          .BYTE <trickyPattern0XPosArray
-                         .BYTE <starTwoXPosArray,<deltoidXPosArray,<diffusedXPosArray
+                         .BYTE <starTwoXPosArray,<deltoidXPosArray,<theTwistXPosArray
                          .BYTE <trickyPattern1XPosArray
                          .BYTE <multicrossXPosArray,<pulsarXPosArray
                          .BYTE <trickyPattern2XPosArray
@@ -17,9 +17,9 @@ pixelXPositionLoPtrArray .BYTE <patternXPosArray,<theTwistXPosArray,<laLlamitaXP
                          .BYTE <customPattern6XPosArray,<customPattern5XPosArray
                          .BYTE <trickyPattern6XPosArray
 
-pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXPosArray
+pixelXPositionHiPtrArray .BYTE >patternXPosArray,>diffusedXPosArray,>laLlamitaXPosArray
                          .BYTE >trickyPattern0XPosArray
-                         .BYTE >starTwoXPosArray,>deltoidXPosArray,>diffusedXPosArray
+                         .BYTE >starTwoXPosArray,>deltoidXPosArray,>theTwistXPosArray
                          .BYTE >trickyPattern1XPosArray
                          .BYTE >multicrossXPosArray,>pulsarXPosArray
                          .BYTE >trickyPattern2XPosArray
@@ -35,9 +35,9 @@ pixelXPositionHiPtrArray .BYTE >patternXPosArray,>theTwistXPosArray,>laLlamitaXP
 ; A pair of arrays together consituting a list of pointers
 ; to positions in memory containing Y position data.
 ; (i.e. $097C, $0E93,$0EC3, $0F07, $0F23, $0F57, $1161, $11B1)
-pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYPosArray
+pixelYPositionLoPtrArray .BYTE <patternYPosArray,<diffusedYPosArray,<laLlamitaYPosArray
                          .BYTE <trickyPattern0YPosArray
-                         .BYTE <starTwoYPosArray,<deltoidYPosArray,<diffusedYPosArray
+                         .BYTE <starTwoYPosArray,<deltoidYPosArray,<theTwistYPosArray
                          .BYTE <trickyPattern1YPosArray
                          .BYTE <multicrossYPosArray,<pulsarYPosArray
                          .BYTE <trickyPattern2YPosArray
@@ -49,9 +49,9 @@ pixelYPositionLoPtrArray .BYTE <patternYPosArray,<theTwistYPosArray,<laLlamitaYP
                          .BYTE <trickyPattern5YPosArray
                          .BYTE <customPattern6YPosArray,<customPattern5YPosArray
                          .BYTE <trickyPattern6YPosArray
-pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYPosArray
+pixelYPositionHiPtrArray .BYTE >patternYPosArray,>diffusedYPosArray,>laLlamitaYPosArray
                          .BYTE >trickyPattern0YPosArray
-                         .BYTE >starTwoYPosArray,>deltoidYPosArray,>diffusedYPosArray
+                         .BYTE >starTwoYPosArray,>deltoidYPosArray,>theTwistYPosArray
                          .BYTE >trickyPattern1YPosArray
                          .BYTE >multicrossYPosArray,>pulsarYPosArray
                          .BYTE >trickyPattern2YPosArray
@@ -66,28 +66,28 @@ pixelYPositionHiPtrArray .BYTE >patternYPosArray,>theTwistYPosArray,>laLlamitaYP
 
 patternTxt
         .TEXT 'BATALYX '
-        .TEXT 'TWIST   '
+        .TEXT 'DIFFUSED'
         .TEXT 'LLAMITA '
         .TEXT 'TRICKY  '
         .TEXT 'STAR TWO'
         .TEXT 'DELTOIDS'
-        .TEXT 'DIFFUSED'
-        .TEXT 'TRICKY  '
+        .TEXT 'TWIST   '
+        .TEXT 'DODGY   '
         .TEXT 'CROSS   '
         .TEXT 'PULSAR  '
-        .TEXT 'TRICKY  '
+        .TEXT 'NAUGHTY '
         .TEXT 'CND     '
         .TEXT 'CND2    '
-        .TEXT 'TRICKY  '
+        .TEXT 'SILLY   '
         .TEXT 'TREE    '
         .TEXT 'CAMELY  '
-        .TEXT 'TRICKY  '
+        .TEXT 'BLOODY  '
         .TEXT 'BIG STAR'
         .TEXT 'SPREADY '
-        .TEXT 'TRICKY  '
+        .TEXT 'BUGGER  '
         .TEXT 'THING   '
         .TEXT 'JEFFIE  '
-        .TEXT 'TRICKY  '
+        .TEXT 'BOLSHY  '
 
 ; The pattern array data.
 patternXPosArray             
@@ -532,119 +532,115 @@ customPattern7YPosArray
 
 ; Tricky patterns
 trickyPattern0XPosArray
-        .BYTE $11,$55
-        .BYTE $09,$55
-        .BYTE $06,$55
-        .BYTE $09,$55
-        .BYTE $EC,$55
-        .BYTE $ED,$55
-        .BYTE $0E,$55
+	.BYTE $E9,$55
+	.BYTE $0E,$55
+	.BYTE $F4,$55
+	.BYTE $F6,$55
+	.BYTE $F2,$55
+	.BYTE $0C,$55
+	.BYTE $EB,$55
 trickyPattern0YPosArray
-        .BYTE $EF,$55
-        .BYTE $F2,$55
-        .BYTE $EE,$55
-        .BYTE $ED,$55
-        .BYTE $F2,$55
-        .BYTE $FE,$55
-        .BYTE $0D,$55
-
+	.BYTE $F4,$55
+	.BYTE $F8,$55
+	.BYTE $F6,$55
+	.BYTE $F6,$55
+	.BYTE $05,$55
+	.BYTE $F3,$55
+	.BYTE $05,$55
 trickyPattern1XPosArray
-        .BYTE $F6,$55
-        .BYTE $F1,$55
-        .BYTE $13,$55
-        .BYTE $FC,$55
-        .BYTE $FA,$55
-        .BYTE $09,$55
-        .BYTE $11,$55
+	.BYTE $FC,$55
+	.BYTE $EE,$55
+	.BYTE $FC,$55
+	.BYTE $0E,$55
+	.BYTE $FC,$55
+	.BYTE $03,$55
+	.BYTE $FD,$55
 trickyPattern1YPosArray
-        .BYTE $0A,$55
-        .BYTE $F5,$55
-        .BYTE $FD,$55
-        .BYTE $04,$55
-        .BYTE $06,$55
-        .BYTE $01,$55
-        .BYTE $FE,$55
-
+	.BYTE $04,$55
+	.BYTE $09,$55
+	.BYTE $01,$55
+	.BYTE $EF,$55
+	.BYTE $F2,$55
+	.BYTE $FC,$55
+	.BYTE $0E,$55
 trickyPattern2XPosArray
-        .BYTE $F8,$55
-        .BYTE $F6,$55
-        .BYTE $F3,$55
-        .BYTE $FD,$55
-        .BYTE $07,$55
-        .BYTE $EC,$55
-        .BYTE $FA,$55
+	.BYTE $0E,$55
+	.BYTE $F1,$55
+	.BYTE $01,$55
+	.BYTE $F4,$55
+	.BYTE $03,$55
+	.BYTE $EC,$55
+	.BYTE $FC,$55
 trickyPattern2YPosArray
-        .BYTE $10,$55
-        .BYTE $0A,$55
-        .BYTE $06,$55
-        .BYTE $FB,$55
-        .BYTE $EE,$55
-        .BYTE $ED,$55
-        .BYTE $FB,$55
-
+	.BYTE $02,$55
+	.BYTE $0B,$55
+	.BYTE $0E,$55
+	.BYTE $E7,$55
+	.BYTE $F5,$55
+	.BYTE $EA,$55
+	.BYTE $06,$55
 trickyPattern3XPosArray
-        .BYTE $02,$55
-        .BYTE $ED,$55
-        .BYTE $05,$55
-        .BYTE $02,$55
-        .BYTE $F2,$55
-        .BYTE $F5,$55
-        .BYTE $0B,$55
+	.BYTE $06,$55
+	.BYTE $0E,$55
+	.BYTE $02,$55
+	.BYTE $0C,$55
+	.BYTE $EC,$55
+	.BYTE $FC,$55
+	.BYTE $0E,$55
 trickyPattern3YPosArray
-        .BYTE $F0,$55
-        .BYTE $08,$55
-        .BYTE $13,$55
-        .BYTE $F3,$55
-        .BYTE $F6,$55
-        .BYTE $12,$55
-        .BYTE $F1,$55
+	.BYTE $F5,$55
+	.BYTE $F4,$55
+	.BYTE $01,$55
+	.BYTE $FD,$55
+	.BYTE $ED,$55
+	.BYTE $F7,$55
+	.BYTE $F5,$55
 trickyPattern4XPosArray
-        .BYTE $F5,$55
-        .BYTE $12,$55
-        .BYTE $13,$55
-        .BYTE $0E,$55
-        .BYTE $08,$55
-        .BYTE $FB,$55
-        .BYTE $F1,$55
+	.BYTE $F5,$55
+	.BYTE $F6,$55
+	.BYTE $06,$55
+	.BYTE $08,$55
+	.BYTE $02,$55
+	.BYTE $EA,$55
+	.BYTE $0B,$55
 trickyPattern4YPosArray
-        .BYTE $11,$55
-        .BYTE $FA,$55
-        .BYTE $09,$55
-        .BYTE $F3,$55
-        .BYTE $EC,$55
-        .BYTE $F0,$55
-        .BYTE $12,$55
+	.BYTE $E8,$55
+	.BYTE $0D,$55
+	.BYTE $FC,$55
+	.BYTE $08,$55
+	.BYTE $06,$55
+	.BYTE $FC,$55
+	.BYTE $F3,$55
 trickyPattern5XPosArray
-        .BYTE $F7,$55
-        .BYTE $EB,$55
-        .BYTE $EF,$55
-        .BYTE $F6,$55
-        .BYTE $EF,$55
-        .BYTE $09,$55
-        .BYTE $FA,$55
+	.BYTE $EB,$55
+	.BYTE $E7,$55
+	.BYTE $E8,$55
+	.BYTE $FB,$55
+	.BYTE $01,$55
+	.BYTE $07,$55
+	.BYTE $FC,$55
 trickyPattern5YPosArray
-        .BYTE $F7,$55
-        .BYTE $03,$55
-        .BYTE $09,$55
-        .BYTE $F2,$55
-        .BYTE $F7,$55
-        .BYTE $03,$55
-        .BYTE $02,$55
+	.BYTE $E9,$55
+	.BYTE $EC,$55
+	.BYTE $0A,$55
+	.BYTE $F4,$55
+	.BYTE $0D,$55
+	.BYTE $FC,$55
+	.BYTE $05,$55
 trickyPattern6XPosArray
-        .BYTE $02,$55
-        .BYTE $F8,$55
-        .BYTE $07,$55
-        .BYTE $F6,$55
-        .BYTE $08,$55
-        .BYTE $ED,$55
-        .BYTE $04,$55
+	.BYTE $0E,$55
+	.BYTE $06,$55
+	.BYTE $ED,$55
+	.BYTE $EE,$55
+	.BYTE $03,$55
+	.BYTE $F9,$55
+	.BYTE $FA,$55
 trickyPattern6YPosArray
-        .BYTE $F5,$55
-        .BYTE $EF,$55
-        .BYTE $F5,$55
-        .BYTE $0F,$55
-        .BYTE $02,$55
-        .BYTE $0D,$55
-        .BYTE $EC,$55
+	.BYTE $02,$55
+	.BYTE $FC,$55
+	.BYTE $0D,$55
+	.BYTE $EF,$55
+	.BYTE $EA,$55
+	.BYTE $EC,$55
+	.BYTE $F9,$55
 
-; vim: tabstop=2 shiftwidth=2 expandtab smartindent
