@@ -1,4 +1,6 @@
 # Psychedelia II
+<img src="https://github.com/mwenge/psyII/assets/58846/5da2ede3-62cb-4f78-9783-140f0f84e39a" height=300>
+
 This is a tribute to [Psychedelia][psychedelia] by Jeff Minter. It's adapted from
 the version included as a sub-game in [Batalyx][batalyx].
 
