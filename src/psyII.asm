@@ -1000,9 +1000,9 @@ HasXAxisSymmetry
 
 currentSymmetrySettingForStep .BYTE $01
 presetColorValuesArray        .BYTE RED,ORANGE,YELLOW,GREEN,LTBLUE,PURPLE,BLUE
-currentColorValue             .BYTE RED
+currentColorValue             .BYTE BLUE
 
-currentColor                  .BYTE RED
+currentColor                  .BYTE BLUE
 lastColorValue                .BYTE $07
 currentBorderColor            .BYTE BLACK
 currentBackgroundColor        .BYTE BLACK
