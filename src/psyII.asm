@@ -1491,6 +1491,7 @@ NextDigit
 pointsEarned .BYTE $00
 pointsLost   .BYTE $00
 SCORE_TXT_OFFSET = STATUS_LINE_TWO_POSITION + 23
+SCORE_LEN = $0F
 ;--------------------------------------------------------
 ; UpdateScoreText
 ;--------------------------------------------------------
@@ -1499,7 +1500,7 @@ UpdateScoreText
         BEQ DecreaseScores
 
         ; Add points earned
-        LDX #$10
+        LDX #SCORE_LEN
 IncreaseScoreLoop   
         INC SCREEN_RAM + SCORE_TXT_OFFSET,X
         LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
@@ -1519,7 +1520,7 @@ DecreaseScores
 
         ; Deducts points lost
         ; Check if we're already zero.
-        LDX #$10
+        LDX #SCORE_LEN
 _Loop
         LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
         CMP #$30
@@ -1529,7 +1530,7 @@ _Loop
         JMP UpdatePointsLost
 
 DecreaseScore
-        LDX #$10
+        LDX #SCORE_LEN
 DecreaseScoreLoop   
         DEC SCREEN_RAM + SCORE_TXT_OFFSET,X
         LDA SCREEN_RAM + SCORE_TXT_OFFSET,X
