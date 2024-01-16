@@ -204,3 +204,87 @@ RIGHT_BAR_ONE_FIFTHS             = $F6
 RIGHT_BAR_TWO_FIFTHS             = $EA
 RIGHT_BAR_TWO_FIFTHS2            = $E7
 
+PLAY_SOUND = $00
+; 'Plays' the value in Byte 2 by writing it to the SID register given
+; by the offset in Byte 3.
+; Byte 0 - Unused
+; Byte 1 - $00 (PLAY_SOUND)
+; Byte 2 - Value to write to offset to $D400 given by Byte 3.
+; Byte 3 - Offset to $D400 to write to.
+; Byte 4 - '00' indicates the next record should be played immediately.
+;          '01' indicates should play no more records.
+;          Anything else indicates the next record should be stored and
+;           no more should be played for now.
+
+INC_AND_PLAY_FROM_BUFFER = $01
+; Picks a value from soundEffectBuffer using Byte 0 as an index, increments
+; it with Byte 2, and then 'plays' it to the register given by Byte 3.
+; Byte 0 - Address of byte to pick from soundEffectBuffer
+; Byte 1 - $01 (INC_AND_PLAY_FROM_BUFFER)
+; Byte 2 - Amount to increment picked byte by.
+; Byte 3 - Offset to $D400 to write to.
+; Byte 4 - '00' indicates the next record should be played immediately.
+;          '01' indicates should play no more records.
+;          Anything else indicates the next record should be stored and
+;           no more should be played for now.
+
+DEC_AND_PLAY_FROM_BUFFER = $02
+; Picks a value from soundEffectBuffer using Byte 0 as an index, decrements
+; it with Byte 2, and then 'plays' it to the register given by Byte 3.
+; Byte 0 - Address of byte to pick from soundEffectBuffer
+; Byte 1 - $02 (DEC_AND_PLAY_FROM_BUFFER)
+; Byte 2 - Amount to decrement picked byte by.
+; Byte 3 - Offset to $D400 to write to.
+; Byte 4 - '00' indicates the next record should be played immediately.
+;          '01' indicates should play no more records.
+;          Anything else indicates the next record should be stored and
+;           no more should be played for now.
+
+PLAY_LOOP = $05
+; Plays a sequence of records in a loop. Will use Byte 0 to pick a
+; value from soundEffectBuffer, decrement Byte 2 from it, play the
+; result to the offset from D400 given by Byte 0, and continue
+; looping from the address given by Bytes 4 and 5
+; until the picked value in soundEffectBuffer reaches zero.
+; Byte 0 - Address of byte to pick from soundEffectBuffer
+; Byte 1 - $05 (PLAY_LOOP)
+; Byte 2 - Amount to decrement picked byte by.
+; Byte 3 - Lo Ptr of next record to play
+; Byte 4 - Hi Ptr of next record to play
+
+LINK = $80
+; Stops playing records and just updates primarySoundEffectLoPtr/
+; primarySoundEffectHiPtr with Byes 4 and 5 that point to the record
+; to be played the next time around.
+; Byte 0 - Unused
+; Byte 1 - $80 (LINK)
+; Byte 2 - Lo Ptr of next record to play
+; Byte 3 - Hi Ptr of next record to play
+; Byte 4 - '00' indicates the next record should be played immediately.
+;          '01' indicates should play no more records.
+;          Anything else indicates the next record should be stored and
+;           no more should be played for now.
+
+REPEAT_PREVIOUS = $81
+; Repeats the previous record by the number of times given in Byte 2.
+; Byte 0 - Unused
+; Byte 1 - $81 (REPEAT_PREVIOUS)
+; Byte 2 - Number of times to play previously stored record.
+; Byte 3 - Unused
+; Byte 4 - '00' indicates the next record should be played immediately.
+;          '01' indicates should play no more records.
+;          Anything else indicates the next record should be stored and
+;           no more should be played for now.
+VOICE1_HI = $01
+VOICE1_CTRL = $04
+VOICE1_ATK_DEC = $05
+VOICE1_SUS_REL = $06
+VOICE2_HI = $08
+VOICE2_CTRL = $0B
+VOLUME = $18
+VOICE3_HI = $0F
+VOICE2_ATK_DEC = $0C
+VOICE2_SUS_REL = $0D
+VOICE3_CTRL = $12
+VOICE3_ATK_DEC = $13
+VOICE3_SUS_REL = $14

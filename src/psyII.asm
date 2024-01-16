@@ -35,6 +35,8 @@ encsLoPtr                     = tipsLoPtr
 encsHiPtr                     = tipsHiPtr
 screenRAMLoPtr                = $23
 screenRAMHiPtr                = $24
+currentSoundEffectLoPtr       = $30
+currentSoundEffectHiPtr       = $31
 
 currentPressedKey             = $C5
 indexIntoDataChars            = $D0
@@ -186,6 +188,10 @@ RasterPositionMatchesRequestedInterrupt
 
         JSR UpdateRasterPosition
 
+        ; Sounds are turned off for now
+        ;JSR PlaySoundEffects
+
+ReturnFromInterrupt
         PLA 
         TAY 
         PLA 
@@ -253,6 +259,17 @@ fillCount2 .BYTE $00
 ; IncrementFillCounter
 ;---------------------------------------------------------------------------------
 IncrementFillCounter
+
+
+        ; Sounds are turned off for now
+;        LDA #<hitEnemyWithBulletSound
+;        STA secondarySoundEffectLoPtr
+;        LDA #>hitEnemyWithBulletSound
+;        STA secondarySoundEffectHiPtr
+;
+;        LDA #$3C
+;        STA soundEffectInProgress
+
         INC fillCount
         BEQ LSBReset
         RTS
@@ -681,6 +698,7 @@ _Loop   LDA #SPACE
         DEX 
         BNE _Loop
 
+
         LDA $D016    ;VIC Control Register 2
         AND #$F0
         ORA #$08
@@ -696,13 +714,6 @@ _Loop   LDA #SPACE
         LDA #BLACK
         STA $D020    ;Border Color
         STA $D021    ;Background Color 0
-        STA $D400    ;Voice 1: Frequency Control - Low-Byte
-
-        LDA #$04
-        STA $D407    ;Voice 2: Frequency Control - Low-Byte
-        LDA #$08
-        STA $D40E    ;Voice 3: Frequency Control - Low-Byte
-
 
         LDA currentColorValue
         STA defaultColorValue
@@ -715,9 +726,6 @@ SetUpSpritesAndVoiceRegisters
 
         LDA #$00
         STA $D015    ;Sprite display Enable
-        STA $D404    ;Voice 1: Control Register
-        STA $D40B    ;Voice 2: Control Register
-        STA $D412    ;Voice 3: Control Register
 
         RTS 
 
@@ -1573,6 +1581,7 @@ DrawPainted
 ReturnFromDrawPainted
         RTS 
 
+.include "sounds.asm"
 * = $2000
 .include "charset.asm"
 .include "patterns.asm"
