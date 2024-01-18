@@ -532,13 +532,13 @@ customPattern7YPosArray
 
 ; Tricky patterns
 trickyPattern0XPosArray
-	.BYTE $E9,$55
-	.BYTE $0E,$55
+	.BYTE $F7,$55
+	.BYTE $05,$55
 	.BYTE $F4,$55
 	.BYTE $F6,$55
 	.BYTE $F2,$55
-	.BYTE $0C,$55
-	.BYTE $EB,$55
+	.BYTE $09,$55
+	.BYTE $F9,$55
 trickyPattern0YPosArray
 	.BYTE $F4,$55
 	.BYTE $F8,$55
