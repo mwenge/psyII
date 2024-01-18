@@ -37,6 +37,8 @@ screenRAMLoPtr                = $23
 screenRAMHiPtr                = $24
 currentSoundEffectLoPtr       = $30
 currentSoundEffectHiPtr       = $31
+rollingGridPreviousChar       = $32
+frameControlCounter           = $33
 
 currentPressedKey             = $C5
 indexIntoDataChars            = $D0
@@ -163,7 +165,7 @@ UpdateRasterPosition
         STA $D011    ;VIC Control Register 1
 
         ; Set the position of the next interrupt
-        LDA #$40
+        LDA #$FF
         STA $D012    ;Raster Position
 
         ; Acknowledge the interrupt
@@ -184,6 +186,7 @@ TitleScreenInterruptHandler
 RasterPositionMatchesRequestedInterrupt   
 
         JSR CheckJoystickAndUpdateCursor
+        JSR PerformRollingGridAnimation
         JSR $FF9F ;$FF9F - scan keyboard                    
 
         JSR UpdateRasterPosition
@@ -1579,6 +1582,30 @@ DrawPainted
         JSR WriteCurrentCharToScreen
 
 ReturnFromDrawPainted
+        RTS 
+
+;-------------------------------------------------------------------------
+; PerformRollingGridAnimation
+;-------------------------------------------------------------------------
+PerformRollingGridAnimation
+        INC frameControlCounter
+        LDA frameControlCounter
+        AND #$01
+        BEQ ScrollGrid
+        RTS 
+
+ScrollGrid
+        LDA unpaintedGrid + $0007
+        STA rollingGridPreviousChar
+        LDX #$07
+_Loop   LDA unpaintedGrid - $0001,X
+        STA unpaintedGrid,X
+        DEX 
+        BNE _Loop
+
+        LDA rollingGridPreviousChar
+        STA unpaintedGrid
+
         RTS 
 
 .include "sounds.asm"
